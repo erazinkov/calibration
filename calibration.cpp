@@ -3,6 +3,8 @@
 #include <TCanvas.h>
 #include <TError.h>
 
+#include <TF1.h>
+
 Calibration::Calibration(const ChannelMap &map, std::vector<dec_ev_t> &events) : _map(map), _events(events)
 {
     _nGamma = map.numberOfChannelsGamma();
@@ -45,6 +47,29 @@ double Calibration::valueTime(const dec_ev_t &event)
 double Calibration::valueGammaAmp(const dec_ev_t &event)
 {
     return static_cast<double>(event.g.amp);
+}
+
+void Calibration::calculateTimePeaksPos(const std::vector<std::vector<TH1 *> > &hists)
+{
+    gErrorIgnoreLevel = 3'000;
+    for (size_t ig{0}; ig < hists.size(); ++ig)
+    {
+        for (size_t ia{0}; ia <  hists[ig].size(); ++ia)
+        {
+            auto h{hists[ig][ia]};
+            auto binMax{h->GetMaximumBin()};
+            auto xMax{h->GetBinCenter(h->GetBin(binMax))};
+            auto rcAmp{h->GetBinContent(h->GetXaxis()->FindBin(xMax - 25.0))};
+            auto peakAmp{h->GetBinContent(binMax) - rcAmp};
+            TF1 *f = new TF1("f", _timePeakFitFunctionObject, xMax - 25.0, xMax + 25.0, 5);
+            f->SetParameters(peakAmp, xMax, 5.0, rcAmp, 0.0);
+            h->Fit(f, "RQ");
+            _timePeaksPos[ig][ia] = f->GetParameter(1);
+            delete f;
+            f = nullptr;
+        }
+    }
+    gErrorIgnoreLevel = 0;
 }
 
 void Calibration::fillHist(const std::vector<dec_ev_t> &events, TH1 *h, double(Calibration::*f)(const dec_ev_t &event))
@@ -97,6 +122,17 @@ void Calibration::clearHists(std::vector<std::vector<TH1 *> > &hists)
     {
         for (size_t ia{0}; ia <  hists[ig].size(); ++ia)
         {
+            hists[ig][ia]->Reset();
+        }
+    }
+}
+
+void Calibration::deleteHists(std::vector<std::vector<TH1 *> > &hists)
+{
+    for (size_t ig{0}; ig < hists.size(); ++ig)
+    {
+        for (size_t ia{0}; ia <  hists[ig].size(); ++ia)
+        {
             delete hists[ig][ia];
             hists[ig][ia] = nullptr;
         }
@@ -104,7 +140,7 @@ void Calibration::clearHists(std::vector<std::vector<TH1 *> > &hists)
     hists.clear();
 }
 
-void Calibration::fillHistsAsync(std::vector<std::vector<TH1 *> > hists, double (Calibration::*f)(const dec_ev_t &))
+void Calibration::fillHistsAsync(const std::vector<std::vector<TH1 *> > &hists, double (Calibration::*f)(const dec_ev_t &))
 {
     std::vector<std::future<void>> futures;
     for (size_t ig{0}; ig < hists.size(); ++ig)
@@ -124,6 +160,7 @@ void Calibration::fillHistsAsync(std::vector<std::vector<TH1 *> > hists, double 
     }
 }
 
+
 void Calibration::processTime()
 {
     std::vector<std::vector<TH1 *>> hists(_nGamma);
@@ -134,10 +171,15 @@ void Calibration::processTime()
 
     fillHistsAsync(hists, f);
 
+    calculateTimePeaksPos(hists);
+
+    clearHists(hists);
+    fillHistsAsync(hists, f);
+
     const std::string psName{"time.ps"};
     drawHistsToFile(psName, hists);
 
-    clearHists(hists);
+    deleteHists(hists);
 }
 
 void Calibration::processGammaAmp()
@@ -153,5 +195,5 @@ void Calibration::processGammaAmp()
     const std::string psName{"gamma_amp.ps"};
     drawHistsToFile(psName, hists);
 
-    clearHists(hists);
+    deleteHists(hists);
 }
