@@ -39,6 +39,8 @@ private:
     unsigned long _nAlpha;
 
     void calculateTimePeaksPos(const std::vector<std::vector<TH1 *> > &hists);
+    double calculateTimePeakPos(TH1 *hist);
+    void calculateAmpPeakPos(const TH1 *hist);
 
     class TimePeakFitFunctionObject
     {
@@ -56,6 +58,22 @@ private:
        }
     };
     TimePeakFitFunctionObject _timePeakFitFunctionObject;
+    class AmpPeakFitFunctionObject
+    {
+    public:
+        AmpPeakFitFunctionObject(){}
+
+        double operator() (double *x, double *par) {
+           double arg{0};
+           if (par[2] != 0.0)
+           {
+               arg = ( x[0] - par[1] ) / par[2];
+           }
+           double fitval{par[0] * TMath::Exp(-0.5 * arg * arg) + par[3] + par[4] * x[0]};
+           return fitval;
+       }
+    };
+    AmpPeakFitFunctionObject _ampPeakFitFunctionObject;
 };
 
 #endif // CALIBRATION_H

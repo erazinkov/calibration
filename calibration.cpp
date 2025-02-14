@@ -56,20 +56,27 @@ void Calibration::calculateTimePeaksPos(const std::vector<std::vector<TH1 *> > &
     {
         for (size_t ia{0}; ia <  hists[ig].size(); ++ia)
         {
-            auto h{hists[ig][ia]};
-            auto binMax{h->GetMaximumBin()};
-            auto xMax{h->GetBinCenter(h->GetBin(binMax))};
-            auto rcAmp{h->GetBinContent(h->GetXaxis()->FindBin(xMax - 25.0))};
-            auto peakAmp{h->GetBinContent(binMax) - rcAmp};
-            TF1 *f = new TF1("f", _timePeakFitFunctionObject, xMax - 25.0, xMax + 25.0, 5);
-            f->SetParameters(peakAmp, xMax, 5.0, rcAmp, 0.0);
-            h->Fit(f, "RQ");
-            _timePeaksPos[ig][ia] = f->GetParameter(1);
-            delete f;
-            f = nullptr;
+            _timePeaksPos[ig][ia] = calculateTimePeakPos(hists[ig][ia]);
         }
     }
     gErrorIgnoreLevel = 0;
+}
+
+double Calibration::calculateTimePeakPos(TH1 *hist)
+{
+    auto timePeakPos{0.0};
+    auto h{hist};
+    auto binMax{h->GetMaximumBin()};
+    auto xMax{h->GetBinCenter(h->GetBin(binMax))};
+    auto rcAmp{h->GetBinContent(h->GetXaxis()->FindBin(xMax - 25.0))};
+    auto peakAmp{h->GetBinContent(binMax) - rcAmp};
+    TF1 *f = new TF1("f", _timePeakFitFunctionObject, xMax - 25.0, xMax + 25.0, 5);
+    f->SetParameters(peakAmp, xMax, 5.0, rcAmp, 0.0);
+    h->Fit(f, "RQ");
+    timePeakPos = f->GetParameter(1);
+    delete f;
+    f = nullptr;
+    return timePeakPos;
 }
 
 void Calibration::fillHist(const std::vector<dec_ev_t> &events, TH1 *h, double(Calibration::*f)(const dec_ev_t &event))
