@@ -18,12 +18,14 @@
 
 void process(const std::string fileName)
 {
+
     const ChannelMap pre;
     Decoder decoder(fileName, pre);
 
     auto r = decoder.events();
     if (!r.empty())
     {
+        std::cout << "Events: " << r.size() << std::endl;
         Calibration calibration(pre, r);
     }
 }
@@ -32,6 +34,8 @@ int main(int argc, char *argv[])
 {
 //    QCoreApplication a(argc, argv);
     auto start = std::chrono::steady_clock::now();
+
+//    process("/home/egor/shares/tmp/std_mag_proba_1_1");
 
     process("/home/egor/shares/tmp/proba_t2_thin_1");
 
