@@ -23,18 +23,18 @@ enum EChannelType {
 class ChannelMap
 {
 public:
-    ChannelMap(std::vector<std::pair<u_int8_t, u_int8_t>> map = mapDefault());
-
-    std::vector<std::pair<u_int8_t, u_int8_t>> & map();
+    static ChannelMap mapNAP();
     unsigned long numberOfChannelsAlpha() const;
     unsigned long numberOfChannelsGamma() const;
     u_int8_t numberByChannel(unsigned long) const;
     u_int8_t typeByChannel(unsigned long) const;
-    bool isCorrect(std::vector<u_int8_t> &);
+    bool isCorrect(std::vector<u_int8_t> &) const;
+    const std::vector<std::pair<u_int8_t, u_int8_t> > &map() const;
+
 private:
     std::vector<std::pair<u_int8_t, u_int8_t>> map_;
     unsigned long numberOfChannels(EChannelType type) const;
-    static std::vector<std::pair<u_int8_t, u_int8_t>> mapDefault();
+    ChannelMap(std::vector<std::pair<u_int8_t, u_int8_t>> map);
 };
 
 #endif // CHANNELMAP_H

@@ -5,9 +5,28 @@ ChannelMap::ChannelMap(std::vector<std::pair<u_int8_t, u_int8_t>> map)
     map_ = map;
 }
 
-std::vector<std::pair<u_int8_t, u_int8_t> > &ChannelMap::map()
+ChannelMap ChannelMap::mapNAP()
 {
-    return map_;
+    std::vector<std::pair<u_int8_t, u_int8_t>> map
+    {
+        {GAMMA, 0},
+        {GAMMA, 1},
+        {GAMMA, 2},
+        {GAMMA, 3},
+        {GAMMA, 4},
+        {GAMMA, 5},
+        {UNKNOWN, 111},
+        {ALPHA, 0},
+        {ALPHA, 1},
+        {ALPHA, 2},
+        {ALPHA, 3},
+        {ALPHA, 4},
+        {ALPHA, 5},
+        {ALPHA, 6},
+        {ALPHA, 7},
+        {ALPHA, 8},
+    };
+    return ChannelMap(map);
 }
 
 unsigned long ChannelMap::numberOfChannelsAlpha() const
@@ -17,7 +36,7 @@ unsigned long ChannelMap::numberOfChannelsAlpha() const
 
 unsigned long ChannelMap::numberOfChannelsGamma() const
 {
-     return numberOfChannels(GAMMA);
+    return numberOfChannels(GAMMA);
 }
 
 u_int8_t ChannelMap::numberByChannel(unsigned long ch) const
@@ -42,30 +61,7 @@ unsigned long ChannelMap::numberOfChannels(EChannelType type) const
     return number;
 }
 
-std::vector<std::pair<u_int8_t, u_int8_t> > ChannelMap::mapDefault()
-{
-    return
-    {
-        {GAMMA, 0},
-        {GAMMA, 1},
-        {GAMMA, 2},
-        {GAMMA, 3},
-        {GAMMA, 4},
-        {GAMMA, 5},
-        {UNKNOWN, 111},
-        {ALPHA, 0},
-        {ALPHA, 1},
-        {ALPHA, 2},
-        {ALPHA, 3},
-        {ALPHA, 4},
-        {ALPHA, 5},
-        {ALPHA, 6},
-        {ALPHA, 7},
-        {ALPHA, 8},
-    };
-}
-
-bool ChannelMap::isCorrect(std::vector<u_int8_t> &map) {
+bool ChannelMap::isCorrect(std::vector<u_int8_t> &map) const {
     if (map.size() != map_.size())
     {
         return false;
@@ -83,5 +79,10 @@ bool ChannelMap::isCorrect(std::vector<u_int8_t> &map) {
         }
     }
     return true;
+}
+
+const std::vector<std::pair<u_int8_t, u_int8_t> > &ChannelMap::map() const
+{
+    return map_;
 }
 

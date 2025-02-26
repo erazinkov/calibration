@@ -178,10 +178,10 @@ void Calibration::processTime()
 
     fillHistsAsync(hists, f);
 
-    calculateTimePeaksPos(hists);
+//    calculateTimePeaksPos(hists);
 
-    clearHists(hists);
-    fillHistsAsync(hists, f);
+//    clearHists(hists);
+//    fillHistsAsync(hists, f);
 
     const std::string psName{"time.ps"};
     drawHistsToFile(psName, hists);
