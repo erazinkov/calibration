@@ -28,9 +28,14 @@ private:
                       std::vector<std::vector<TH1 *>> &hists);
     void clearHists(std::vector<std::vector<TH1 *>> &hists);
     void deleteHists(std::vector<std::vector<TH1 *>> &hists);
+
+    void fillHist(TH1 *hist, double (Calibration::*f)(const dec_ev_t &));
+
+    void processTimeStamp();
     void processTime();
     void processGammaAmp();
 
+    double valueTimeStamp(const dec_ev_t &event);
     double valueTime(const dec_ev_t &event);
     double valueGammaAmp(const dec_ev_t &event);
 

@@ -4,6 +4,7 @@
 #include <TError.h>
 
 #include <TF1.h>
+#include <TFile.h>
 
 Calibration::Calibration(const ChannelMap &map, std::vector<dec_ev_t> &events) : _map(map), _events(events)
 {
@@ -21,8 +22,9 @@ Calibration::Calibration(const ChannelMap &map, std::vector<dec_ev_t> &events) :
 
 void Calibration::process()
 {
-    processTime();
-    processGammaAmp();
+    processTimeStamp();
+//    processTime();
+//    processGammaAmp();
 }
 
 std::vector<dec_ev_t> Calibration::selectedEvents(uint8_t ig, u_int8_t ia)
@@ -37,6 +39,11 @@ std::vector<dec_ev_t> Calibration::selectedEvents(uint8_t ig, u_int8_t ia)
         ++it;
     }
     return selectedEvents;
+}
+
+double Calibration::valueTimeStamp(const dec_ev_t &event)
+{
+    return static_cast<double>(event.ts);
 }
 
 double Calibration::valueTime(const dec_ev_t &event)
@@ -167,6 +174,36 @@ void Calibration::fillHistsAsync(const std::vector<std::vector<TH1 *> > &hists, 
     }
 }
 
+void Calibration::fillHist(TH1 *hist, double (Calibration::*f)(const dec_ev_t &))
+{
+    auto bin{0};
+    for (const auto & item : _events)
+    {
+
+        auto v{(this->*f)(item)};
+        hist->SetBinContent(++bin, v);
+
+    }
+}
+
+void Calibration::processTimeStamp()
+{
+    TH1 *hist{new TH1D("histTimeStamp", "histTimeStamp", 500'000, 0, 500'000)};
+
+
+    double(Calibration::*f)(const dec_ev_t &event);
+    f = &Calibration::valueTimeStamp;
+
+    fillHist(hist, f);
+
+
+    const std::string psName{"time_stamp.ps"};
+
+    std::unique_ptr<TFile> myFile( TFile::Open("time_stamp.root", "RECREATE") );
+    myFile->WriteObject(hist, hist->GetName());
+
+    delete hist;
+}
 
 void Calibration::processTime()
 {

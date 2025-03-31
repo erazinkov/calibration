@@ -39,7 +39,8 @@ void Decoder::process()
     adcm_counters_t counters;
 
     auto c{false};
-
+    auto spillNumber{0};
+    double prevTs{0};
     while (ifs_)
     {
         ifs_ >> hdr;
@@ -48,6 +49,10 @@ void Decoder::process()
         {
             ifs_ >> cmap;
             c = pre_.isCorrect(cmap.map);
+            if (spillNumber++ == 1)
+            {
+                break;
+            }
             continue;
         }
         if (hdr.id == STOR_ID_EVNT && hdr.size > sizeof(stor_packet_hdr_t))
@@ -79,8 +84,36 @@ void Decoder::process()
                 event.a.index = numberAlpha;
                 event.a.amp = g->a;
                 event.tdc = g->t - a->t;
-                event.ts = ev.ts;
+                double deltaTs = std::abs(static_cast<double>(ev.ts) - prevTs);
+//                if (events_.size() > 0 && events_.size() < 100)
+//                {
+//                    std::cout << events_.size() << " " <<  deltaTs << std::endl;
+//                }
+//                if (events_.size() > 97'900 && events_.size() < 98'000)
+//                {
+//                    std::cout << events_.size() << " " << deltaTs << std::endl;
+//                }
+                if (deltaTs > 4'000'000'000 && events_.size())
+                {
+//                    std::cout << events_.size() << std::endl;
+                    event.ts = static_cast<double>(ev.ts) + static_cast<double>(UINT32_MAX);
+                    if (events_.size() > 97'900 && events_.size() < 98'000)
+                    {
+                        std::cout << events_.size() << " " << deltaTs << " " << event.ts << std::endl;
+                    }
+//                    event.ts = static_cast<double>(ev.ts);
+                } else {
+                    event.ts = static_cast<double>(ev.ts);
+                }
+                prevTs = static_cast<double>(event.ts);
+//                event.ts = static_cast<uint64_t>(ev.ts);
                 events_.push_back(event);
+
+
+                if (events_.size() > 100'000)
+                {
+                    break;
+                }
             }
             delete g;
             delete a;

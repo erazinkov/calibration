@@ -84,7 +84,7 @@ struct dec_det_t
 
 struct dec_ev_t
 {    
-    uint32_t ts;    // timestamp, 10 ns step
+    double ts;    // timestamp, 10 ns step
     float tdc;      // delta time = gamma_time - alpha_time
     dec_det_t a;    // alpha detector
     dec_det_t g;    // gamma detector

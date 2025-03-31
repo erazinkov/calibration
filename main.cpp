@@ -41,14 +41,24 @@ int main(int argc, char *argv[])
 //    process("/home/egor/shares/tmp/test_period_1_sec_5min_1");  //7236445
 //    process("/home/egor/shares/tmp/test_period_1_sec_5min_2");  //8261846
 
-    process("/home/egor/shares/tmp/test_period_10_sec_5_min_adcm_1"); //6866059
-    process("/home/egor/shares/tmp/test_period_1_sec_5_min_adcm_1"); //5540182
+//    process("/home/egor/shares/tmp/test_period_10_sec_5_min_adcm_1"); //6866059
+//    process("/home/egor/shares/tmp/test_period_1_sec_5_min_adcm_1"); //5540182
 
-//    process("/home/egor/shares/tmp/phantom_3_20cm_1");
+    process("/home/egor/shares/tmp/phantom_3_20cm_1");
 
-//    process("/data/agp-c/polygon/kp_dynamic_1"); // file with bad block
+
+//    process("/home/egor/shares/tmp/kp_static_1"); // file with bad block
     auto stop = std::chrono::steady_clock::now();
     std::cout << "Time elapsed, ms: " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << std::endl;
+
+//    uint64_t v1 = 3926860182;
+//    uint32_t v2 = 3927035562;
+
+
+//    uint32_t v1{0b1111'1111'1111'1111'1111'1111'1111'1111};
+//    uint64_t v2{0b0000'0000'0000'0000'0000'0000'0000'0001'0000'0000'0000'0000'0000'0000'0000'0000};
+//    uint32_t v3 = 52333;
+//    std::cout << v1 << " " << v2 << " " << (v3 | v2)<< std::endl;
 
     return 0;
 //    return a.exec();
