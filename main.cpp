@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
 //    uint32_t v1{0b1111'1111'1111'1111'1111'1111'1111'1111};
 //    uint64_t v2{0b0000'0000'0000'0000'0000'0000'0000'0001'0000'0000'0000'0000'0000'0000'0000'0000};
 //    uint32_t v3 = 52333;
-//    std::cout << v1 << " " << v2 << " " << (v3 | v2)<< std::endl;
+//    std::cout << DBL_MAX << std::endl;
 
     return 0;
 //    return a.exec();

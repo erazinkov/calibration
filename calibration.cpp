@@ -188,7 +188,7 @@ void Calibration::fillHist(TH1 *hist, double (Calibration::*f)(const dec_ev_t &)
 
 void Calibration::processTimeStamp()
 {
-    TH1 *hist{new TH1D("histTimeStamp", "histTimeStamp", 500'000, 0, 500'000)};
+    TH1 *hist{new TH1D("histTimeStamp", "histTimeStamp", 1'500'000, 0, 1'500'000)};
 
 
     double(Calibration::*f)(const dec_ev_t &event);

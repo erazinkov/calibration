@@ -41,6 +41,11 @@ void Decoder::process()
     auto c{false};
     auto spillNumber{0};
     double prevTs{0};
+
+    auto isIntegerOverflow = [](double currentTs, double prevTs, double limit = 3'000'000'000){
+        return std::abs(currentTs - prevTs) > limit;
+    };
+
     while (ifs_)
     {
         ifs_ >> hdr;
@@ -49,7 +54,7 @@ void Decoder::process()
         {
             ifs_ >> cmap;
             c = pre_.isCorrect(cmap.map);
-            if (spillNumber++ == 1)
+            if (spillNumber++ == 5)
             {
                 break;
             }
@@ -84,40 +89,16 @@ void Decoder::process()
                 event.a.index = numberAlpha;
                 event.a.amp = g->a;
                 event.tdc = g->t - a->t;
-                double deltaTs = std::abs(static_cast<double>(ev.ts) - prevTs);
-//                if (events_.size() > 0 && events_.size() < 100)
-//                {
-//                    std::cout << events_.size() << " " <<  deltaTs << std::endl;
-//                }
-//                if (events_.size() > 97'900 && events_.size() < 98'000)
-//                {
-//                    std::cout << events_.size() << " " << deltaTs << std::endl;
-//                }
-                if (deltaTs > 4'000'000'000 && events_.size())
-                {
-//                    std::cout << events_.size() << std::endl;
-                    event.ts = static_cast<double>(ev.ts) + static_cast<double>(UINT32_MAX);
-                    if (events_.size() > 97'900 && events_.size() < 98'000)
-                    {
-                        std::cout << events_.size() << " " << deltaTs << " " << event.ts << std::endl;
-                    }
-//                    event.ts = static_cast<double>(ev.ts);
-                } else {
-                    event.ts = static_cast<double>(ev.ts);
+                double currentTs{static_cast<double>(ev.ts)};
+                event.ts = currentTs;
+                while (isIntegerOverflow(event.ts, prevTs) && events_.size()) {
+                    event.ts += UINT32_MAX;
                 }
-                prevTs = static_cast<double>(event.ts);
-//                event.ts = static_cast<uint64_t>(ev.ts);
+                prevTs = event.ts;
                 events_.push_back(event);
-
-
-                if (events_.size() > 100'000)
-                {
-                    break;
-                }
             }
             delete g;
             delete a;
-
             continue;
         }
         if (hdr.id == STOR_ID_CNTR && hdr.size > sizeof(stor_packet_hdr_t))
