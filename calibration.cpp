@@ -41,9 +41,14 @@ std::vector<dec_ev_t> Calibration::selectedEvents(uint8_t ig, u_int8_t ia)
     return selectedEvents;
 }
 
-double Calibration::valueTimeStamp(const dec_ev_t &event)
+long long int  Calibration::valueEventTime(const dec_ev_t &event)
 {
-    return static_cast<double>(event.ts);
+    return event.time;
+}
+
+long long int Calibration::valueTimeStamp(const dec_ev_t &event)
+{
+    return event.ts;
 }
 
 double Calibration::valueTime(const dec_ev_t &event)
@@ -174,28 +179,40 @@ void Calibration::fillHistsAsync(const std::vector<std::vector<TH1 *> > &hists, 
     }
 }
 
-void Calibration::fillHist(TH1 *hist, double (Calibration::*f)(const dec_ev_t &))
+void Calibration::fillHist(TH1 *hist, long long int (Calibration::*f)(const dec_ev_t &))
 {
+//    auto bin{0};
+//    for (size_t i{0}; i < _events.size() - 1; ++i)
+//    {
+//        auto vNext{(this->*f)(_events[i + 1])};
+//        auto vPrev{(this->*f)(_events[i])};
+//        hist->SetBinContent(++bin, vNext - vPrev);
+//    }
+
     auto bin{0};
     for (const auto & item : _events)
     {
-
+//        bin++;
+//        if (bin > 10)
+//        {
+//            break;
+//        }
         auto v{(this->*f)(item)};
-        hist->SetBinContent(++bin, v);
-
+//        const std::chrono::system_clock::time_point tp{std::chrono::nanoseconds(v)};
+//        const std::time_t t_c = std::chrono::system_clock::to_time_t(tp);
+//        std::cout << std::put_time(std::localtime(&t_c), "%F %T") << std::endl;
+        hist->SetBinContent(++bin, static_cast<double>(v));
     }
 }
 
 void Calibration::processTimeStamp()
 {
-    TH1 *hist{new TH1D("histTimeStamp", "histTimeStamp", 1'500'000, 0, 1'500'000)};
+    TH1 *hist{new TH1D("histTimeStamp", "histTimeStamp", 500'000, 0, 500'000)};
 
-
-    double(Calibration::*f)(const dec_ev_t &event);
-    f = &Calibration::valueTimeStamp;
+    long long int(Calibration::*f)(const dec_ev_t &event);
+    f = &Calibration::valueEventTime;
 
     fillHist(hist, f);
-
 
     const std::string psName{"time_stamp.ps"};
 

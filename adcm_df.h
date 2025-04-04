@@ -6,11 +6,22 @@
 #include <fstream>
 #include <vector>
 
-
-
 #define STOR_ID_CMAP  0x504D    /* 'MP' */
 #define STOR_ID_EVNT  0x5645    /* 'EV' */
 #define STOR_ID_CNTR  0x5443    /* 'CT' */
+#define STOR_ID_ND    0x444E    /* 'ND' */
+
+struct stor_nd_t {
+  long long int time;   // last modified time
+  friend std::ifstream &operator >> (std::ifstream &stream, stor_nd_t &d) {
+      stream.read(reinterpret_cast<char *>(&d), sizeof(stor_nd_t));
+      return stream;
+  }
+  friend std::ofstream &operator << (std::ofstream &stream, stor_nd_t &d) {
+      stream.write(reinterpret_cast<char *>(&d), sizeof(stor_nd_t));
+      return stream;
+  }
+} __attribute__ ((packed));
 
 struct stor_packet_hdr_t {
   u_int16_t id;     // data block ID
@@ -84,7 +95,8 @@ struct dec_det_t
 
 struct dec_ev_t
 {    
-    double ts;    // timestamp, 10 ns step
+    long long int time; // time
+    long long int ts;    // timestamp, 10 ns step
     float tdc;      // delta time = gamma_time - alpha_time
     dec_det_t a;    // alpha detector
     dec_det_t g;    // gamma detector
