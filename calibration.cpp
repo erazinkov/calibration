@@ -41,6 +41,11 @@ std::vector<dec_ev_t> Calibration::selectedEvents(uint8_t ig, u_int8_t ia)
     return selectedEvents;
 }
 
+timespec Calibration::valueTimeS(const dec_ev_t &event)
+{
+    return event.timeS;
+}
+
 long long int  Calibration::valueEventTime(const dec_ev_t &event)
 {
     return event.time;
@@ -179,7 +184,7 @@ void Calibration::fillHistsAsync(const std::vector<std::vector<TH1 *> > &hists, 
     }
 }
 
-void Calibration::fillHist(TH1 *hist, long long int (Calibration::*f)(const dec_ev_t &))
+void Calibration::fillHist(TH1 *hist, timespec (Calibration::*f)(const dec_ev_t &))
 {
 //    auto bin{0};
 //    for (size_t i{0}; i < _events.size() - 1; ++i)
@@ -192,25 +197,36 @@ void Calibration::fillHist(TH1 *hist, long long int (Calibration::*f)(const dec_
     auto bin{0};
     for (const auto & item : _events)
     {
-//        bin++;
-//        if (bin > 10)
-//        {
-//            break;
-//        }
+        bin++;
+        if (bin > 10)
+        {
+            break;
+        }
         auto v{(this->*f)(item)};
-//        const std::chrono::system_clock::time_point tp{std::chrono::nanoseconds(v)};
-//        const std::time_t t_c = std::chrono::system_clock::to_time_t(tp);
-//        std::cout << std::put_time(std::localtime(&t_c), "%F %T") << std::endl;
+
+        const std::chrono::system_clock::time_point tp{std::chrono::seconds(v.tv_sec)};
+        const std::time_t t_c = std::chrono::system_clock::to_time_t(tp);
+//        std::cout << std::put_time(std::localtime(&t_c), "%F %T") << "." << v.tv_nsec << std::endl;
+//        hist->SetBinContent(++bin, static_cast<double>(v));
+    }
+}
+
+void Calibration::fillHist(TH1 *hist, long long int (Calibration::*f)(const dec_ev_t &))
+{
+    auto bin{0};
+    for (const auto & item : _events)
+    {
+        auto v{(this->*f)(item)};
         hist->SetBinContent(++bin, static_cast<double>(v));
     }
 }
 
 void Calibration::processTimeStamp()
 {
-    TH1 *hist{new TH1D("histTimeStamp", "histTimeStamp", 500'000, 0, 500'000)};
+    TH1 *hist{new TH1D("histTimeStamp", "histTimeStamp", 2'000'000, 0, 2'000'000)};
 
     long long int(Calibration::*f)(const dec_ev_t &event);
-    f = &Calibration::valueEventTime;
+    f = &Calibration::valueTimeStamp;
 
     fillHist(hist, f);
 
@@ -219,6 +235,17 @@ void Calibration::processTimeStamp()
     std::unique_ptr<TFile> myFile( TFile::Open("time_stamp.root", "RECREATE") );
     myFile->WriteObject(hist, hist->GetName());
 
+    TH1 *histS{new TH1D("histS", "histS", 2'000'000, 0, 2'000'000)};
+    std::vector<long long int> s{
+        261'720,
+        574'416,
+        851'236,
+        1'155'089};
+    for (size_t i{0}; i < s.size(); ++i)
+    {
+        histS->SetBinContent(static_cast<int>(s[i]), hist->GetMaximum());
+    }
+    myFile->WriteObject(histS, histS->GetName());
     delete hist;
 }
 

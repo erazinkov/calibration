@@ -30,13 +30,15 @@ private:
     void deleteHists(std::vector<std::vector<TH1 *>> &hists);
 
     void fillHist(TH1 *hist, long long int (Calibration::*f)(const dec_ev_t &));
+    void fillHist(TH1 *hist, timespec (Calibration::*f)(const dec_ev_t &));
 
     void processTimeStamp();
     void processTime();
     void processGammaAmp();
 
-    long long int  valueEventTime(const dec_ev_t &event);
-    long long int  valueTimeStamp(const dec_ev_t &event);
+    timespec valueTimeS(const dec_ev_t &event);
+    long long int valueEventTime(const dec_ev_t &event);
+    long long int valueTimeStamp(const dec_ev_t &event);
     double valueTime(const dec_ev_t &event);
     double valueGammaAmp(const dec_ev_t &event);
 

@@ -14,11 +14,6 @@ std::vector<dec_ev_t> &Decoder::events()
     return events_;
 }
 
-std::vector<dec_cnt_t> &Decoder::counters()
-{
-    return counters_;
-}
-
 void Decoder::process()
 {
     ifs_.open(fileName_, std::ios::in | std::ios::binary);
@@ -28,8 +23,7 @@ void Decoder::process()
         return;
     }
 
-    auto number{pre_.numberOfChannelsAlpha()};
-    counters_.resize(number);
+    counters_.rawhits.resize(pre_.numberOfChannelsAlpha());
 
     events_.clear();
 
@@ -40,9 +34,17 @@ void Decoder::process()
 
     stor_nd_t nd;
 
+    std::vector<long long int> ndV;
+    std::vector<double> tsSumV;
+    std::vector<double> countersTimeV;
+
     auto c{false};
     auto spillNumber{0};
     long long int prevTs{0};
+
+    long long int tsSum{0};
+
+    double prevCounterTime{0};
 
     size_t index{0};
 
@@ -56,21 +58,6 @@ void Decoder::process()
 
         if (hdr.id == STOR_ID_ND && hdr.size > sizeof(stor_packet_hdr_t))
         {
-            if (events_.size())
-            {
-                long long int d{events_[events_.size() - 1].ts - events_[index].ts};
-                long long int t0{nd.time * 1'000'000 - d * 10};
-//                std::cout << nd.time * 1'000'000 << " " << t0 * 10 << " " << nd.time * 1'000'000 + t0 * 10 << std::endl;
-//                const std::chrono::system_clock::time_point tp{std::chrono::nanoseconds(t00)};
-//                const std::time_t t_c = std::chrono::system_clock::to_time_t(tp);
-//                std::cout << std::put_time(std::localtime(&t_c), "%F %T") << std::endl;
-                for (size_t i{index}; i < events_.size(); ++i)
-                {
-                    events_[i].time = t0 + events_[i].ts * 10 - events_[index].ts * 10;
-                }
-                index = events_.size() - 1;
-            }
-
             ifs_ >> nd;
             continue;
         }
@@ -78,10 +65,6 @@ void Decoder::process()
         {
             ifs_ >> cmap;
             c = pre_.isCorrect(cmap.map);
-            if (spillNumber++ == 1)
-            {
-                break;
-            }
             continue;
         }
         if (hdr.id == STOR_ID_EVNT && hdr.size > sizeof(stor_packet_hdr_t))
@@ -115,10 +98,6 @@ void Decoder::process()
                 event.tdc = g->t - a->t;
                 long long int currentTs{static_cast<long long int>(ev.ts)};
                 event.ts = currentTs;
-                while (isIntegerOverflow(event.ts, prevTs) && events_.size()) {
-                    event.ts += UINT32_MAX;
-                }
-                prevTs = event.ts;
                 events_.push_back(event);
             }
             delete g;
@@ -141,8 +120,7 @@ void Decoder::process()
                 {
                     case ALPHA:
                     {
-                        counters_[number].rawhits += counters.rawhits[i];
-                        counters_[number].time += counters.time;
+                        counters_.rawhits[number] += counters.rawhits[i];
                         break;
                     }
                     default:
@@ -151,11 +129,51 @@ void Decoder::process()
                     }
                 }
             }
+            counters_.time += counters.time;
+            if (events_.size())
+            {
+                for (size_t i{index + 1}; i < events_.size(); ++i)
+                {
+                    while (isIntegerOverflow(events_[i].ts, events_[index].ts) && events_.size()) {
+                        events_[i].ts += UINT32_MAX;
+                    }
+                }
+                auto indexTs{events_[index].ts};
+                for (size_t i{index}; i < events_.size(); ++i) {
+                    events_[i].ts -= indexTs;
+                }
+                index = events_.size();
+            }
+            std::cout << events_.size() << std::endl;
             continue;
         }
         ifs_.seekg(1 - static_cast<long long>(sizeof(stor_packet_hdr_t)), std::ios_base::cur);
     }
     ifs_.close();
+
+//    std::cout << ndV.size() << std::endl;
+
+//    for (size_t i{0}; i < ndV.size() - 1; ++i)
+//    {
+//        const std::chrono::system_clock::time_point tpPrev{std::chrono::seconds(ndV[i])};
+
+//        const std::time_t t_c = std::chrono::system_clock::to_time_t(tpPrev);
+//        std::cout << std::put_time(std::localtime(&t_c), "%F %T") << std::endl;
+//    }
+
+//    for (size_t i{0}; i < tsSumV.size() - 1; ++i)
+//    {
+//        const std::chrono::system_clock::time_point tpPrev{std::chrono::seconds(ndV[i])};
+//        const std::chrono::system_clock::time_point tpNext{std::chrono::seconds(ndV[i + 1])};
+//        auto delta = tpNext - tpPrev;
+//        std::cout << tsSumV[i + 1] << " "
+//                                   << static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(delta).count())
+//                                   << " " << countersTimeV[i + 1] << std::endl;
+
+////        const std::time_t t_c = std::chrono::system_clock::to_time_t(tpPrev);
+////        std::cout << std::put_time(std::localtime(&t_c), "%F %T") << std::endl;
+//    }
+
 }
 
 std::vector<long> Decoder::positionsOfCMAPHeaders()

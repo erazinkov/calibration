@@ -44,9 +44,9 @@ int main(int argc, char *argv[])
 //    process("/home/egor/shares/tmp/test_period_10_sec_5_min_adcm_1"); //6866059
 //    process("/home/egor/shares/tmp/test_period_1_sec_5_min_adcm_1"); //5540182
 
-//    process("/home/egor/shares/tmp/phantom_3_20cm_1");
-    process("/home/egor/build-adcmmodifier-Desktop-Debug/adcm.dat.mod");
-
+    process("/home/egor/shares/tmp/phantom_3_20cm_1");
+//    process("/home/egor/build-adcmmodifier-Desktop-Debug/adcm.dat.mod");
+//    process("/home/egor/shares/tmp/nch_16_long_nap");
 
 //    process("/home/egor/shares/tmp/kp_static_1"); // file with bad block
     auto stop = std::chrono::steady_clock::now();

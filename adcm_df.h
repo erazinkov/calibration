@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <fstream>
 #include <vector>
+#include <ctime>
 
 #define STOR_ID_CMAP  0x504D    /* 'MP' */
 #define STOR_ID_EVNT  0x5645    /* 'EV' */
@@ -95,6 +96,7 @@ struct dec_det_t
 
 struct dec_ev_t
 {    
+    std::timespec timeS;
     long long int time; // time
     long long int ts;    // timestamp, 10 ns step
     float tdc;      // delta time = gamma_time - alpha_time
@@ -105,7 +107,7 @@ struct dec_ev_t
 struct dec_cnt_t
 {    
     double time;        // time of count measurement in seconds
-    u_int32_t rawhits;  // raw hit counters
+    std::vector<u_int32_t> rawhits;  // raw hit counters
 };
 
 #endif /* ADCM_DF_H */
