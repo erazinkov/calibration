@@ -36,8 +36,7 @@ private:
     void processTime();
     void processGammaAmp();
 
-    timespec valueTimeS(const dec_ev_t &event);
-    long long int valueEventTime(const dec_ev_t &event);
+
     long long int valueTimeStamp(const dec_ev_t &event);
     double valueTime(const dec_ev_t &event);
     double valueGammaAmp(const dec_ev_t &event);

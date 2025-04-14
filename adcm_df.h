@@ -96,8 +96,6 @@ struct dec_det_t
 
 struct dec_ev_t
 {    
-    std::timespec timeS;
-    long long int time; // time
     long long int ts;    // timestamp, 10 ns step
     float tdc;      // delta time = gamma_time - alpha_time
     dec_det_t a;    // alpha detector

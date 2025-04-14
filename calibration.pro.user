@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 6.0.2, 2025-02-13T15:13:29. -->
+<!-- Written by QtCreator 6.0.2, 2025-04-09T11:32:04. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -156,8 +156,9 @@
     <valuelist type="QVariantList" key="CustomOutputParsers"/>
     <value type="int" key="PE.EnvironmentAspect.Base">2</value>
     <valuelist type="QVariantList" key="PE.EnvironmentAspect.Changes"/>
-    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">Qt4ProjectManager.Qt4RunConfiguration:/home/egor/calibration/calibration.pro</value>
-    <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">/home/egor/calibration/calibration.pro</value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">calibration2</value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">Qt4ProjectManager.Qt4RunConfiguration:/home/egor/projects/calibration/calibration.pro</value>
+    <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">/home/egor/projects/calibration/calibration.pro</value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">false</value>
     <value type="bool" key="RunConfiguration.UseCppDebuggerAuto">true</value>
     <value type="bool" key="RunConfiguration.UseLibrarySearchPath">true</value>

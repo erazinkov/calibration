@@ -39,18 +39,16 @@ void Decoder::process()
     std::vector<double> countersTimeV;
 
     auto c{false};
+
     auto spillNumber{0};
-    long long int prevTs{0};
 
-    long long int tsSum{0};
-
-    double prevCounterTime{0};
-
-    size_t index{0};
+    long long int prevTime{0};
 
     auto isIntegerOverflow = [](long long int currentTs, long long int prevTs, long long int limit = 3'000'000'000){
         return std::abs(currentTs - prevTs) > limit;
     };
+
+    std::vector<dec_ev_t> spillEvents;
 
     while (ifs_)
     {
@@ -58,6 +56,10 @@ void Decoder::process()
 
         if (hdr.id == STOR_ID_ND && hdr.size > sizeof(stor_packet_hdr_t))
         {
+//            if (++spillNumber > 2)
+//            {
+//                break;
+//            }
             ifs_ >> nd;
             continue;
         }
@@ -65,6 +67,9 @@ void Decoder::process()
         {
             ifs_ >> cmap;
             c = pre_.isCorrect(cmap.map);
+
+            spillEvents.clear();
+
             continue;
         }
         if (hdr.id == STOR_ID_EVNT && hdr.size > sizeof(stor_packet_hdr_t))
@@ -98,7 +103,8 @@ void Decoder::process()
                 event.tdc = g->t - a->t;
                 long long int currentTs{static_cast<long long int>(ev.ts)};
                 event.ts = currentTs;
-                events_.push_back(event);
+                spillEvents.push_back(event);
+//                events_.push_back(event);
             }
             delete g;
             delete a;
@@ -130,50 +136,34 @@ void Decoder::process()
                 }
             }
             counters_.time += counters.time;
-            if (events_.size())
+            if (spillEvents.size())
             {
-                for (size_t i{index + 1}; i < events_.size(); ++i)
+
+                for (size_t i{1}; i < spillEvents.size(); ++i)
                 {
-                    while (isIntegerOverflow(events_[i].ts, events_[index].ts) && events_.size()) {
-                        events_[i].ts += UINT32_MAX;
+                    while (isIntegerOverflow(spillEvents[i].ts, spillEvents[0].ts) && spillEvents.size()) {
+                        spillEvents[i].ts += UINT32_MAX;
                     }
                 }
-                auto indexTs{events_[index].ts};
-                for (size_t i{index}; i < events_.size(); ++i) {
-                    events_[i].ts -= indexTs;
+                auto tsOffset{spillEvents[0].ts};
+                for (size_t i{0}; i < spillEvents.size(); ++i)
+                {
+                    spillEvents[i].ts -= tsOffset;
                 }
-                index = events_.size();
+                for (size_t i{0}; i < spillEvents.size(); ++i)
+                {
+                    auto dateInNanoSec{nd.time * 1'000'000 + spillEvents[i].ts * 10 - spillEvents[spillEvents.size() - 1].ts * 10};
+                    spillEvents[i].ts = dateInNanoSec;
+                }
+
+                events_.insert(events_.cend(), spillEvents.cbegin(), spillEvents.cend());
             }
-            std::cout << events_.size() << std::endl;
+            prevTime = nd.time * 1'000'000;
             continue;
         }
         ifs_.seekg(1 - static_cast<long long>(sizeof(stor_packet_hdr_t)), std::ios_base::cur);
     }
     ifs_.close();
-
-//    std::cout << ndV.size() << std::endl;
-
-//    for (size_t i{0}; i < ndV.size() - 1; ++i)
-//    {
-//        const std::chrono::system_clock::time_point tpPrev{std::chrono::seconds(ndV[i])};
-
-//        const std::time_t t_c = std::chrono::system_clock::to_time_t(tpPrev);
-//        std::cout << std::put_time(std::localtime(&t_c), "%F %T") << std::endl;
-//    }
-
-//    for (size_t i{0}; i < tsSumV.size() - 1; ++i)
-//    {
-//        const std::chrono::system_clock::time_point tpPrev{std::chrono::seconds(ndV[i])};
-//        const std::chrono::system_clock::time_point tpNext{std::chrono::seconds(ndV[i + 1])};
-//        auto delta = tpNext - tpPrev;
-//        std::cout << tsSumV[i + 1] << " "
-//                                   << static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(delta).count())
-//                                   << " " << countersTimeV[i + 1] << std::endl;
-
-////        const std::time_t t_c = std::chrono::system_clock::to_time_t(tpPrev);
-////        std::cout << std::put_time(std::localtime(&t_c), "%F %T") << std::endl;
-//    }
-
 }
 
 std::vector<long> Decoder::positionsOfCMAPHeaders()
