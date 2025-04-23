@@ -13,7 +13,7 @@
 #define STOR_ID_ND    0x444E    /* 'ND' */
 
 struct stor_nd_t {
-  long long int time;   // last modified time
+  long long int time;   // last modified time in ns
   friend std::ifstream &operator >> (std::ifstream &stream, stor_nd_t &d) {
       stream.read(reinterpret_cast<char *>(&d), sizeof(stor_nd_t));
       return stream;

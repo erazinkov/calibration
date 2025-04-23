@@ -34,15 +34,8 @@ void Decoder::process()
 
     stor_nd_t nd;
 
-    std::vector<long long int> ndV;
-    std::vector<double> tsSumV;
-    std::vector<double> countersTimeV;
 
     auto c{false};
-
-    auto spillNumber{0};
-
-    long long int prevTime{0};
 
     auto isIntegerOverflow = [](long long int currentTs, long long int prevTs, long long int limit = 3'000'000'000){
         return std::abs(currentTs - prevTs) > limit;
@@ -56,10 +49,6 @@ void Decoder::process()
 
         if (hdr.id == STOR_ID_ND && hdr.size > sizeof(stor_packet_hdr_t))
         {
-//            if (++spillNumber > 2)
-//            {
-//                break;
-//            }
             ifs_ >> nd;
             continue;
         }
@@ -69,7 +58,6 @@ void Decoder::process()
             c = pre_.isCorrect(cmap.map);
 
             spillEvents.clear();
-
             continue;
         }
         if (hdr.id == STOR_ID_EVNT && hdr.size > sizeof(stor_packet_hdr_t))
@@ -104,7 +92,6 @@ void Decoder::process()
                 long long int currentTs{static_cast<long long int>(ev.ts)};
                 event.ts = currentTs;
                 spillEvents.push_back(event);
-//                events_.push_back(event);
             }
             delete g;
             delete a;
@@ -152,13 +139,13 @@ void Decoder::process()
                 }
                 for (size_t i{0}; i < spillEvents.size(); ++i)
                 {
-                    auto dateInNanoSec{nd.time * 1'000'000 + spillEvents[i].ts * 10 - spillEvents[spillEvents.size() - 1].ts * 10};
+                    auto dateInNanoSec{nd.time + spillEvents[i].ts * 10 - spillEvents[spillEvents.size() - 1].ts * 10};
                     spillEvents[i].ts = dateInNanoSec;
                 }
 
                 events_.insert(events_.cend(), spillEvents.cbegin(), spillEvents.cend());
+                std::cout << events_.size() << std::endl;
             }
-            prevTime = nd.time * 1'000'000;
             continue;
         }
         ifs_.seekg(1 - static_cast<long long>(sizeof(stor_packet_hdr_t)), std::ios_base::cur);
