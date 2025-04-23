@@ -11,7 +11,9 @@ SOURCES += \
         calibration.cpp \
         channelmap.cpp \
         decoder.cpp \
-        main.cpp
+        geodata.cpp \
+        main.cpp \
+        mapdata.cpp
 
 
 INCLUDEPATH += $$system(root-config --incdir)
@@ -26,4 +28,6 @@ HEADERS += \
     adcm_df.h \
     calibration.h \
     channelmap.h \
-    decoder.h
+    decoder.h \
+    geodata.h \
+    mapdata.h

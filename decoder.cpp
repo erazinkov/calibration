@@ -1,8 +1,5 @@
 #include "decoder.h"
 
-#include <iostream>
-#include <bits/stdc++.h>
-
 Decoder::Decoder(const std::string &fileName, const ChannelMap &pre)
     : fileName_{fileName} , pre_{pre}
 {
