@@ -3,6 +3,7 @@
 
 #include <fstream>
 #include <chrono>
+#include <vector>
 
 class GeoData
 {
@@ -13,6 +14,7 @@ public:
     std::pair<std::chrono::system_clock::time_point, std::chrono::system_clock::time_point> period;
 private:
     std::chrono::system_clock::time_point getTimePoint(const std::string &);
+    std::vector<std::string> splitLine(const std::string &line);
 };
 
 #endif // GEODATA_H

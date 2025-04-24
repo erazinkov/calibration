@@ -32,13 +32,36 @@ std::chrono::system_clock::time_point GeoData::getTimePoint(const std::string &s
     return tp;
 }
 
+std::vector<std::string> GeoData::splitLine(const std::string &line)
+{
+    std::stringstream ss(line);
+    std::string str;
+
+    std::vector<std::string> strs;
+    while (ss >> str)
+    {
+        strs.push_back(str);
+    }
+    return strs;
+}
+
 std::ifstream &operator >> (std::ifstream &stream, GeoData &d)
 {
-    std::string str[4];
-    stream >> str[0] >> str[1]>> str[2] >> str[3];
+    std::string line;
+    getline(stream, line);
+
+    std::string first{""},
+                second{""};
+    auto strs{d.splitLine(line)};
+    if (strs.size() == 4)
+    {
+        first = strs.at(0) + strs.at(1);
+        second = strs.at(2) + strs.at(3);
+    }
+
     d.period = {
-        d.getTimePoint(str[0] + str[1]),
-        d.getTimePoint(str[2] + str[3])
+        d.getTimePoint(first),
+        d.getTimePoint(second)
     };
     return stream;
 }

@@ -64,6 +64,7 @@ void process(const std::string &mapFileName, const std::string &geoFileName)
     for (const auto& item : geoData)
     {
         printTimePoint(item.period.first);
+        printTimePoint(item.period.second);
     }
 
 //    const auto pre = ChannelMap::mapNAP();
