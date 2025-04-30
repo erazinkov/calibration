@@ -48,24 +48,38 @@ int main(int argc, char *argv[])
     return a.exec();
 }
 
+void strToNs()
+{
+    std::string str{"2024-05-01 00:00:00"};
+    std::string strNs{"123456000"};
+    std::tm tm = {};
+    std::stringstream ss{str};
+    ss >> std::get_time(&tm, "%Y-%m-%d  %H:%M:%S");
+    std::chrono::system_clock::time_point tp{std::chrono::system_clock::from_time_t(std::mktime(&tm))};
+    tp += std::chrono::nanoseconds(std::atoll(strNs.c_str()));
+    long long int ns{tp.time_since_epoch().count()};
+    std::cout << ns << std::endl;
+}
+
 void process(const std::string &mapFileName, const std::string &geoFileName)
 {
-    std::vector<MapData> mapData;
-    std::vector<GeoData> geoData;
+    strToNs();
+//    std::vector<MapData> mapData;
+//    std::vector<GeoData> geoData;
 
-    getData(mapFileName, mapData);
-    getData(geoFileName, geoData);
+//    getData(mapFileName, mapData);
+//    getData(geoFileName, geoData);
 
 //    for (const auto& item : mapData)
 //    {
 //        printTimePoint(item.lastModified);
 //    }
 
-    for (const auto& item : geoData)
-    {
-        printTimePoint(item.period.first);
-        printTimePoint(item.period.second);
-    }
+//    for (const auto& item : geoData)
+//    {
+//        printTimePoint(item.period.first);
+//        printTimePoint(item.period.second);
+//    }
 
 //    const auto pre = ChannelMap::mapNAP();
 //    Decoder decoder(mapFileName.toStdString(), pre);

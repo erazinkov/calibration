@@ -50,18 +50,11 @@ std::ifstream &operator >> (std::ifstream &stream, GeoData &d)
     std::string line;
     getline(stream, line);
 
-    std::string first{""},
-                second{""};
     auto strs{d.splitLine(line)};
-    if (strs.size() == 4)
-    {
-        first = strs.at(0) + strs.at(1);
-        second = strs.at(2) + strs.at(3);
-    }
 
     d.period = {
-        d.getTimePoint(first),
-        d.getTimePoint(second)
+        d.getTimePoint(strs.size() != 4 ? "" : strs.at(0) + strs.at(1)),
+        d.getTimePoint(strs.size() != 4 ? "" : strs.at(2) + strs.at(3))
     };
     return stream;
 }
