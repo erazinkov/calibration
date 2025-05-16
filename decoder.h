@@ -10,6 +10,7 @@ public:
     Decoder(const std::string &, const ChannelMap &);
     std::vector<dec_ev_t> & events();
     void process();
+
     std::vector<long> positionsOfCMAPHeaders();
     std::vector<long> positionsOfNDHeaders();
 private:

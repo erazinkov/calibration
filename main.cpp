@@ -39,7 +39,8 @@ int main(int argc, char *argv[])
     QTimer::singleShot(0, [] () {
         QElapsedTimer elapsedTimer;
         elapsedTimer.start();
-        const QString mapFileName{"/home/egor/build-adcmmodifier-Desktop-Debug/adcm.dat.mod.map"};
+//        const QString mapFileName{"/home/egor/build-adcmmodifier-Desktop-Debug/adcm.dat.mod.map"};
+        const QString mapFileName{"/home/egor/shares/tmp/tochka_1.mod.map"};
         const QString geoFileName{"/home/egor/build-adcmmodifier-Desktop-Debug/test.txt"};
         process(mapFileName.toStdString(), geoFileName.toStdString());
         qInfo() << "Time elapsed, ms:" << elapsedTimer.elapsed();
@@ -63,12 +64,12 @@ void strToNs()
 
 void process(const std::string &mapFileName, const std::string &geoFileName)
 {
-    strToNs();
-//    std::vector<MapData> mapData;
-//    std::vector<GeoData> geoData;
+//    strToNs();
+    std::vector<MapData> mapData;
+    std::vector<GeoData> geoData;
 
-//    getData(mapFileName, mapData);
-//    getData(geoFileName, geoData);
+    getData(mapFileName, mapData);
+    getData(geoFileName, geoData);
 
 //    for (const auto& item : mapData)
 //    {
@@ -80,6 +81,16 @@ void process(const std::string &mapFileName, const std::string &geoFileName)
 //        printTimePoint(item.period.first);
 //        printTimePoint(item.period.second);
 //    }
+
+    for (const auto& geoItem : geoData) {
+        for (const auto& mapItem : mapData) {
+            if (geoItem.period.first < mapItem.lastModified && mapItem.lastModified < geoItem.period.second) {
+                auto a{mapItem.getNanoSeconds()};
+                std::cout << a << std::endl;
+            }
+        }
+    }
+
 
 //    const auto pre = ChannelMap::mapNAP();
 //    Decoder decoder(mapFileName.toStdString(), pre);
