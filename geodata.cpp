@@ -6,6 +6,24 @@ GeoData::GeoData()
 {
 }
 
+std::pair<long long, long long> GeoData::getNanoSeconds() const
+{
+    {
+        auto first{
+            std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::time_point_cast<std::chrono::nanoseconds>(this->period.first)
+            .time_since_epoch())
+            .count()
+        };
+        auto second{
+            std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::time_point_cast<std::chrono::nanoseconds>(this->period.second)
+            .time_since_epoch())
+            .count()
+        };
+        std::pair<long long int, long long int> ns{ first, second };
+        return ns;
+    }
+}
+
 std::chrono::system_clock::time_point GeoData::getTimePoint(const std::string &str)
 {
     auto posNs = str.find_last_of(".");

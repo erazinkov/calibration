@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
         elapsedTimer.start();
 //        const QString mapFileName{"/home/egor/build-adcmmodifier-Desktop-Debug/adcm.dat.mod.map"};
         const QString mapFileName{"/home/egor/shares/tmp/tochka_1.mod.map"};
-        const QString geoFileName{"/home/egor/build-adcmmodifier-Desktop-Debug/test.txt"};
+        const QString geoFileName{"/home/egor/shares/tmp/test.txt"};
         process(mapFileName.toStdString(), geoFileName.toStdString());
         qInfo() << "Time elapsed, ms:" << elapsedTimer.elapsed();
         QCoreApplication::exit(0);
@@ -81,25 +81,37 @@ void process(const std::string &mapFileName, const std::string &geoFileName)
 //        printTimePoint(item.period.first);
 //        printTimePoint(item.period.second);
 //    }
+    const std::string path{"/home/egor/shares/tmp/"};
+    const auto pre = ChannelMap::mapNAP();
+    Decoder decoder(pre);
+    std::vector<dec_ev_t> events;
 
-    for (const auto& geoItem : geoData) {
-        for (const auto& mapItem : mapData) {
-            if (geoItem.period.first < mapItem.lastModified && mapItem.lastModified < geoItem.period.second) {
-                auto a{mapItem.getNanoSeconds()};
-                std::cout << a << std::endl;
-            }
+    const auto timeOffset{12'123'456'000};
+
+    for (size_t i{0}; i < mapData.size(); ++i) {
+        decoder.process(path + mapData.at(i).fileName, mapData.at(i).offset, std::pair<long long, long long>{ 1714510800123456000 - timeOffset, 1714512960123456000 + timeOffset});
+        auto r = decoder.events();
+        if (!r.empty())
+        {
+            std::cout << i << " Events: " << r.size() << std::endl;
+            events.insert(events.cend(), r.cbegin(), r.cend());
         }
     }
+    //ref: 202252 ref: 550199
+    std::cout << "Total events: " << events.size() << std::endl; //59'047'117 ref: 59'224'785
 
-
-//    const auto pre = ChannelMap::mapNAP();
-//    Decoder decoder(mapFileName.toStdString(), pre);
-
-//    auto r = decoder.events();
-//    if (!r.empty())
-//    {
-//        std::cout << "Events: " << r.size() << std::endl;
-//        Calibration calibration(pre, r);
+//    for (const auto& geoItem : geoData) {
+//        for (const auto& mapItem : mapData) {
+//            if (geoItem.period.first < mapItem.lastModified && mapItem.lastModified < geoItem.period.second) {
+//                decoder.process(path + mapItem.fileName, mapItem.offset, geoItem.getNanoSeconds());
+//                auto r = decoder.events();
+//                if (!r.empty())
+//                {
+//                    std::cout << "Events: " << r.size() << std::endl;
+//                    Calibration calibration(pre, r);
+//                }
+//            }
+//        }
 //    }
 }
 
