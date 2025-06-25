@@ -82,8 +82,10 @@ void Decoder::process(const std::string &fileName)
                 auto numberAlpha{pre_.numberByChannel(a->ch)};
                 event.g.index = numberGamma;
                 event.g.amp = g->a;
+                event.g.rt = g->w;
                 event.a.index = numberAlpha;
-                event.a.amp = g->a;
+                event.a.amp = a->a;
+                event.a.rt = a->w;
                 event.tdc = g->t - a->t;
                 long long int currentTs{static_cast<long long int>(ev.ts)};
                 event.ts = currentTs;
@@ -141,7 +143,6 @@ void Decoder::process(const std::string &fileName)
                 }
 
                 events_.insert(events_.cend(), spillEvents.cbegin(), spillEvents.cend());
-                std::cout << events_.size() << std::endl;
             }
             continue;
         }
@@ -331,11 +332,15 @@ void Decoder::process(const std::string &fileName,
                 dec_ev_t event;
                 auto numberGamma{pre_.numberByChannel(g->ch)};
                 auto numberAlpha{pre_.numberByChannel(a->ch)};
+
                 event.g.index = numberGamma;
                 event.g.amp = g->a;
+                event.g.rt = g->w;
                 event.a.index = numberAlpha;
-                event.a.amp = g->a;
+                event.a.amp = a->a;
+                event.a.rt = a->w;
                 event.tdc = g->t - a->t;
+
                 long long int currentTs{static_cast<long long int>(ev.ts)};
                 event.ts = currentTs;
                 spillEvents.push_back(event);
