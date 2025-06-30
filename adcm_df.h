@@ -93,7 +93,7 @@ struct dec_ev_t
 struct dec_cnt_t
 {    
     double time;        // time of count measurement in seconds
-    u_int32_t rawhits;  // raw hit counters
+    std::vector<u_int32_t> rawhits;  // raw hit counters
 };
 
 #endif /* ADCM_DF_H */

@@ -14,13 +14,17 @@ public:
     void process();
 
 private:
-    const ChannelMap _map;
-    const std::vector<dec_ev_t> _events;
+    const ChannelMap map_;
+    const std::vector<dec_ev_t> events_;
 
     std::vector<dec_ev_t> selectedEvents(uint8_t ig, u_int8_t ia);
     void fillHist(const std::vector<dec_ev_t> &events, TH1 *h, double(Calibration::*f)(const dec_ev_t &event));
+    void fillHist(const std::vector<dec_ev_t> &events, TH1 *h, std::function<double(const dec_ev_t &event)>);
     void fillHistsAsync(const std::vector<std::vector<TH1 *>> &hists, double(Calibration::*f)(const dec_ev_t &event));
-    void drawHistsToFile(const std::string &psName, std::vector<std::vector<TH1 *>> hists);
+
+    void fillHistsAsync(const std::vector<std::vector<TH1 *> > &hists, std::function<double(const dec_ev_t &)> f);
+
+    void drawHistsToFile(const std::string &psName, const std::vector<std::vector<TH1 *> > &hists) const;
     void prepareHists(const std::string &histName,
                       int nBinsX,
                       double xLow,
@@ -39,12 +43,12 @@ private:
     double valueTime(const dec_ev_t &event);
     double valueGammaAmp(const dec_ev_t &event);
 
-    std::vector<std::vector<double>> _timePeaksPos;
-    unsigned long _nGamma;
-    unsigned long _nAlpha;
+    std::vector<std::vector<double>> timePeaksPos_;
+    unsigned long nGamma_;
+    unsigned long nAlpha_;
 
     void calculateTimePeaksPos(const std::vector<std::vector<TH1 *> > &hists);
-    double calculateTimePeakPos(TH1 *hist);
+    double calculateTimePeakPos(TH1 *hist) const;
     void calculateAmpPeakPos(const TH1 *hist);
 
     class TimePeakFitFunctionObject
@@ -62,7 +66,7 @@ private:
            return fitval;
        }
     };
-    TimePeakFitFunctionObject _timePeakFitFunctionObject;
+    TimePeakFitFunctionObject timePeakFitFunctionObject_;
     class AmpPeakFitFunctionObject
     {
     public:
@@ -78,7 +82,7 @@ private:
            return fitval;
        }
     };
-    AmpPeakFitFunctionObject _ampPeakFitFunctionObject;
+    AmpPeakFitFunctionObject ampPeakFitFunctionObject_;
 };
 
 #endif // CALIBRATION_H

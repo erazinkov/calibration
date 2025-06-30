@@ -14,7 +14,7 @@ std::vector<dec_ev_t> &Decoder::events()
     return events_;
 }
 
-std::vector<dec_cnt_t> &Decoder::counters()
+dec_cnt_t &Decoder::counters()
 {
     return counters_;
 }
@@ -29,7 +29,7 @@ void Decoder::process()
     }
 
     auto number{pre_.numberOfChannelsAlpha()};
-    counters_.resize(number);
+    counters_.rawhits.resize(number);
 
     events_.clear();
 
@@ -39,7 +39,6 @@ void Decoder::process()
     adcm_counters_t counters;
 
     auto c{false};
-    auto spillNumber{0};
     double prevTs{0};
 
     auto isIntegerOverflow = [](double currentTs, double prevTs, double limit = 3'000'000'000){
@@ -54,10 +53,6 @@ void Decoder::process()
         {
             ifs_ >> cmap;
             c = pre_.isCorrect(cmap.map);
-            if (spillNumber++ == 5)
-            {
-                break;
-            }
             continue;
         }
         if (hdr.id == STOR_ID_EVNT && hdr.size > sizeof(stor_packet_hdr_t))
@@ -87,11 +82,11 @@ void Decoder::process()
                 event.g.index = numberGamma;
                 event.g.amp = g->a;
                 event.a.index = numberAlpha;
-                event.a.amp = g->a;
+                event.a.amp = a->a;
                 event.tdc = g->t - a->t;
                 double currentTs{static_cast<double>(ev.ts)};
                 event.ts = currentTs;
-                while (isIntegerOverflow(event.ts, prevTs) && events_.size()) {
+                if (isIntegerOverflow(event.ts, prevTs) && events_.size()) {
                     event.ts += UINT32_MAX;
                 }
                 prevTs = event.ts;
@@ -117,8 +112,12 @@ void Decoder::process()
                 {
                     case ALPHA:
                     {
-                        counters_[number].rawhits += counters.rawhits[i];
-                        counters_[number].time += counters.time;
+                        counters_.rawhits[number] += counters.rawhits[i];
+                        break;
+                    }
+                    case GAMMA:
+                    {
+                        counters_.rawhits[number] += counters.rawhits[i];
                         break;
                     }
                     default:
@@ -126,6 +125,7 @@ void Decoder::process()
                         break;
                     }
                 }
+                counters_.time += counters.time;
             }
             continue;
         }

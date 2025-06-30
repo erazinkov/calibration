@@ -34,6 +34,7 @@ int main(int argc, char *argv[])
 //    QCoreApplication a(argc, argv);
     auto start = std::chrono::steady_clock::now();
 
+
 //    process("/home/egor/shares/tmp/std_mag_proba_1_1");
 
 //    process("/home/egor/shares/tmp/test_period_10_sec_5min_1"); //8189809 / 7236445 = 1.13
@@ -44,7 +45,8 @@ int main(int argc, char *argv[])
 //    process("/home/egor/shares/tmp/test_period_10_sec_5_min_adcm_1"); //6866059
 //    process("/home/egor/shares/tmp/test_period_1_sec_5_min_adcm_1"); //5540182
 
-    process("/home/egor/shares/tmp/phantom_3_20cm_1");
+//    process("/home/egor/shares/tmp/phantom_3_20cm_1");
+    process("/home/egor/shares/tmp/jun19-18.32.43");
 
 
 //    process("/home/egor/shares/tmp/kp_static_1"); // file with bad block
