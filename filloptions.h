@@ -4,19 +4,32 @@
 
 class FillOptions
 {
-   enum class Type {
+public:
+    enum class Value {
         ENERGY,
         TIME,
     };
-public:
-    FillOptions(Type type);
-    FillOptions(Type type, double min, double max);
-private:
+    struct Range {
+        enum class Type {
+            IN,
+            OUT,
+        };
+        double min;
+        double max;
+        Type type;
+    };
+    FillOptions(Value value);
+    FillOptions(Value value, Range range);
 
-    Type _type;
-    double _min;
-    double _max;
+    Value value() const;
+
+    bool useRange() const;
+
+private:
+    Value _value;
+    Range _range;
     bool _useRange;
 };
+
 
 #endif // FILLOPTIONS_H

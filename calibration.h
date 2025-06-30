@@ -1,12 +1,14 @@
 #ifndef CALIBRATION_H
 #define CALIBRATION_H
 
-#include "adcm_df.h"
-#include "channelmap.h"
 #include <functional>
 
 #include <TH1.h>
 #include <TMath.h>
+
+#include "adcm_df.h"
+#include "channelmap.h"
+#include "filloptions.h"
 
 class Calibration
 {
@@ -19,8 +21,11 @@ private:
     const std::vector<dec_ev_t> _events;
 
     std::vector<dec_ev_t> selectedEvents(uint8_t ig, u_int8_t ia);
-    void fillHist(const std::vector<dec_ev_t> &events, TH1 *h, std::function<double(const dec_ev_t &)>);
-    void fillHistsAsync(const std::vector<std::vector<TH1 *> > &hists, std::function<double(const dec_ev_t &)>);
+
+    void fillHist(const std::vector<dec_ev_t> &events, TH1 *h, FillOptions &);
+    void fillHistsAsync(const std::vector<std::vector<TH1 *> > &hists, FillOptions &);
+
+
 
     void drawHistsToFile(const std::string &psName, const std::vector<std::vector<TH1 *> > &hists) const;
     void prepareHists(const std::string &histName,
@@ -36,17 +41,12 @@ private:
     void processTime();
     void processGammaAmp();
 
-    double valueTimeStamp(const dec_ev_t &event);
-    double valueTime(const dec_ev_t &event);
-    double valueGammaCh(const dec_ev_t &event);
-
     std::vector<std::vector<double>> _timePeaksPos;
     unsigned long _nGamma;
     unsigned long _nAlpha;
 
     void calculateTimePeaksPos(const std::vector<std::vector<TH1 *> > &hists);
     double calculateTimePeakPos(TH1 *hist) const;
-    void calculateAmpPeakPos(const TH1 *hist);
 
     class TimePeakFitFunctionObject
     {

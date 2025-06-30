@@ -1,12 +1,22 @@
 #include "filloptions.h"
 
-FillOptions::FillOptions(Type type) : _type{type}, _min{0.0}, _max{0.0}, _useRange{false}
+FillOptions::FillOptions(Value value) : _value{value}, _range{Range()}, _useRange{false}
 {
 
 }
 
-FillOptions::FillOptions(Type type, double min, double max) : _type{type}, _min{min}, _max{max}, _useRange{true}
+FillOptions::FillOptions(Value value, Range range) : _value{value}, _range{range}, _useRange{true}
 {
 
+}
+
+FillOptions::Value FillOptions::value() const
+{
+    return _value;
+}
+
+bool FillOptions::useRange() const
+{
+    return _useRange;
 }
 
