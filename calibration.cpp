@@ -48,10 +48,10 @@ double Calibration::valueTimeStamp(const dec_ev_t &event)
 
 double Calibration::valueTime(const dec_ev_t &event)
 {
-    return static_cast<double>(event.tdc) - timePeaksPos_[event.g.index][event.a.index];
+    return static_cast<double>(event.tdc) - timePeaksPos_.at(event.g.index).at(event.a.index);
 }
 
-double Calibration::valueGammaAmp(const dec_ev_t &event)
+double Calibration::valueGammaCh(const dec_ev_t &event)
 {
     return static_cast<double>(event.g.amp);
 }
@@ -209,7 +209,7 @@ void Calibration::processGammaAmp()
     std::vector<std::vector<TH1 *>> hists(nGamma_);
     prepareHists("histGammaAmp", 640, 0, 4e3, hists);
 
-    fillHistsAsync(hists, std::bind(&Calibration::valueGammaAmp, this, std::placeholders::_1));
+    fillHistsAsync(hists, std::bind(&Calibration::valueGammaCh, this, std::placeholders::_1));
 
     const std::string psName{"gamma_amp.ps"};
 //    drawHistsToFile(psName, hists);

@@ -38,7 +38,7 @@ private:
 
     double valueTimeStamp(const dec_ev_t &event);
     double valueTime(const dec_ev_t &event);
-    double valueGammaAmp(const dec_ev_t &event);
+    double valueGammaCh(const dec_ev_t &event);
 
     std::vector<std::vector<double>> timePeaksPos_;
     unsigned long nGamma_;
