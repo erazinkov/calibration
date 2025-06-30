@@ -85,15 +85,6 @@ double Calibration::calculateTimePeakPos(TH1 *hist) const
     return timePeakPos;
 }
 
-void Calibration::fillHist(const std::vector<dec_ev_t> &events, TH1 *h, double(Calibration::*f)(const dec_ev_t &event))
-{
-    for (const auto & item : events)
-    {
-        auto v{(this->*f)(item)};
-        h->Fill(v);
-    }
-}
-
 void Calibration::fillHist(const std::vector<dec_ev_t> &events, TH1 *h, std::function<double(const dec_ev_t &)> f)
 {
     for (const auto & item : events)
@@ -116,6 +107,11 @@ void Calibration::drawHistsToFile(const std::string &psName, const std::vector<s
         {
             c->cd(static_cast<int>(ia) + 1);
             hists[ig][ia]->Draw();
+            auto listOfFunctions{hists[ig][ia]->GetListOfFunctions()};
+            for (auto *item : *listOfFunctions)
+            {
+                item->Draw("SAME");
+            }
         }
         c->Print(psName.c_str());
         c->Clear();
@@ -163,26 +159,6 @@ void Calibration::deleteHists(std::vector<std::vector<TH1 *> > &hists)
     hists.clear();
 }
 
-void Calibration::fillHistsAsync(const std::vector<std::vector<TH1 *> > &hists, double (Calibration::*f)(const dec_ev_t &))
-{
-    std::vector<std::future<void>> futures;
-    for (size_t ig{0}; ig < hists.size(); ++ig)
-    {
-        for (size_t ia{0}; ia <  hists[ig].size(); ++ia)
-        {
-            futures.emplace_back(std::async(std::launch::async, [this, &hists, &f] (u_int8_t g, u_int8_t a) {
-                auto sE{selectedEvents(g, a)};
-                fillHist(sE, hists[g][a], f);
-            }, ig, ia));
-        }
-    }
-
-    for (size_t i{0}; i < futures.size(); ++i)
-    {
-        futures[i].get();
-    }
-}
-
 void Calibration::fillHistsAsync(const std::vector<std::vector<TH1 *> > &hists, std::function<double(const dec_ev_t &)> f)
 {
     std::vector<std::future<void>> futures;
@@ -203,31 +179,9 @@ void Calibration::fillHistsAsync(const std::vector<std::vector<TH1 *> > &hists, 
     }
 }
 
-void Calibration::fillHist(TH1 *hist, double (Calibration::*f)(const dec_ev_t &))
-{
-    auto bin{0};
-    for (const auto & item : events_)
-    {
-        auto v{(this->*f)(item)};
-        hist->SetBinContent(++bin, v);
-    }
-}
-
 void Calibration::processTimeStamp()
 {
-    TH1 *hist{new TH1D("histTimeStamp", "histTimeStamp", 1'500'000, 0, 1'500'000)};
 
-    double(Calibration::*f)(const dec_ev_t &event);
-    f = &Calibration::valueTimeStamp;
-
-    fillHist(hist, f);
-
-    const std::string psName{"time_stamp.ps"};
-
-    std::unique_ptr<TFile> myFile( TFile::Open("time_stamp.root", "RECREATE") );
-    myFile->WriteObject(hist, hist->GetName());
-
-    delete hist;
 }
 
 void Calibration::processTime()
@@ -235,18 +189,17 @@ void Calibration::processTime()
     std::vector<std::vector<TH1 *>> hists(nGamma_);
     prepareHists("histTime", 400, -100, 100, hists);
 
-    double(Calibration::*f)(const dec_ev_t &event);
-    f = &Calibration::valueTime;
-
-    fillHistsAsync(hists, f);
+    fillHistsAsync(hists, std::bind(&Calibration::valueTime, this, std::placeholders::_1));
 
     calculateTimePeaksPos(hists);
 
-    clearHists(hists);
-    fillHistsAsync(hists, f);
-
     const std::string psName{"time.ps"};
     drawHistsToFile(psName, hists);
+
+    clearHists(hists);
+    fillHistsAsync(hists, std::bind(&Calibration::valueTime, this, std::placeholders::_1));
+
+
 
     deleteHists(hists);
 }
@@ -256,13 +209,10 @@ void Calibration::processGammaAmp()
     std::vector<std::vector<TH1 *>> hists(nGamma_);
     prepareHists("histGammaAmp", 640, 0, 4e3, hists);
 
-    double(Calibration::*f)(const dec_ev_t &event);
-    f = &Calibration::valueGammaAmp;
-
-    fillHistsAsync(hists, f);
+    fillHistsAsync(hists, std::bind(&Calibration::valueGammaAmp, this, std::placeholders::_1));
 
     const std::string psName{"gamma_amp.ps"};
-    drawHistsToFile(psName, hists);
+//    drawHistsToFile(psName, hists);
 
     deleteHists(hists);
 }

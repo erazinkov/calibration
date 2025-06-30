@@ -3,6 +3,7 @@
 
 #include "adcm_df.h"
 #include "channelmap.h"
+#include <functional>
 
 #include <TH1.h>
 #include <TMath.h>
@@ -18,11 +19,8 @@ private:
     const std::vector<dec_ev_t> events_;
 
     std::vector<dec_ev_t> selectedEvents(uint8_t ig, u_int8_t ia);
-    void fillHist(const std::vector<dec_ev_t> &events, TH1 *h, double(Calibration::*f)(const dec_ev_t &event));
-    void fillHist(const std::vector<dec_ev_t> &events, TH1 *h, std::function<double(const dec_ev_t &event)>);
-    void fillHistsAsync(const std::vector<std::vector<TH1 *>> &hists, double(Calibration::*f)(const dec_ev_t &event));
-
-    void fillHistsAsync(const std::vector<std::vector<TH1 *> > &hists, std::function<double(const dec_ev_t &)> f);
+    void fillHist(const std::vector<dec_ev_t> &events, TH1 *h, std::function<double(const dec_ev_t &)>);
+    void fillHistsAsync(const std::vector<std::vector<TH1 *> > &hists, std::function<double(const dec_ev_t &)>);
 
     void drawHistsToFile(const std::string &psName, const std::vector<std::vector<TH1 *> > &hists) const;
     void prepareHists(const std::string &histName,
@@ -33,7 +31,6 @@ private:
     void clearHists(std::vector<std::vector<TH1 *>> &hists);
     void deleteHists(std::vector<std::vector<TH1 *>> &hists);
 
-    void fillHist(TH1 *hist, double (Calibration::*f)(const dec_ev_t &));
 
     void processTimeStamp();
     void processTime();

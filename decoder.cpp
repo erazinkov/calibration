@@ -3,6 +3,8 @@
 #include <iostream>
 #include <bits/stdc++.h>
 
+#include "progressbar.h"
+
 Decoder::Decoder(const std::string &fileName, const ChannelMap &pre)
     : fileName_{fileName} , pre_{pre}
 {
@@ -28,6 +30,10 @@ void Decoder::process()
         return;
     }
 
+    ifs_.seekg(0, std::ios::end);
+    u_int32_t size{static_cast<u_int32_t>(ifs_.tellg())};
+    ifs_.seekg(0);
+
     auto number{pre_.numberOfChannelsAlpha()};
     counters_.rawhits.resize(number);
 
@@ -39,6 +45,7 @@ void Decoder::process()
     adcm_counters_t counters;
 
     auto c{false};
+    u_int32_t currentPosition{0};
     double prevTs{0};
 
     auto isIntegerOverflow = [](double currentTs, double prevTs, double limit = 3'000'000'000){
@@ -51,8 +58,14 @@ void Decoder::process()
 
         if (hdr.id == STOR_ID_CMAP && hdr.size > sizeof(stor_packet_hdr_t))
         {
+            currentPosition = static_cast<u_int32_t>(ifs_.tellg());
             ifs_ >> cmap;
             c = pre_.isCorrect(cmap.map);
+            if (c)
+            {
+                currentPosition -= sizeof(stor_packet_hdr_t);
+                ProgressBar<u_int32_t>::show(currentPosition, size);
+            }
             continue;
         }
         if (hdr.id == STOR_ID_EVNT && hdr.size > sizeof(stor_packet_hdr_t))
@@ -125,8 +138,11 @@ void Decoder::process()
                         break;
                     }
                 }
-                counters_.time += counters.time;
             }
+            counters_.time += counters.time;
+            ifs_.ignore(hdr.size
+                       - sizeof(stor_packet_hdr_t)
+                       - (sizeof(counters.n) + sizeof(counters.time) + sizeof(*counters.rawhits.cbegin()) * counters.n));
             continue;
         }
         ifs_.seekg(1 - static_cast<long long>(sizeof(stor_packet_hdr_t)), std::ios_base::cur);

@@ -26,4 +26,5 @@ HEADERS += \
     adcm_df.h \
     calibration.h \
     channelmap.h \
-    decoder.h
+    decoder.h \
+    progressbar.h
