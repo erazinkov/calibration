@@ -6,15 +6,15 @@
 #include <TF1.h>
 #include <TFile.h>
 
-Calibration::Calibration(const ChannelMap &map, std::vector<dec_ev_t> &events) : map_(map), events_(events)
+Calibration::Calibration(const ChannelMap &map, std::vector<dec_ev_t> &events) : _map(map), _events(events)
 {
-    nGamma_ = map.numberOfChannelsGamma();
-    nAlpha_ = map.numberOfChannelsAlpha();
+    _nGamma = map.numberOfChannelsGamma();
+    _nGamma = map.numberOfChannelsAlpha();
 
-    timePeaksPos_.resize(nGamma_);
-    for (auto & item : timePeaksPos_)
+    _timePeaksPos.resize(_nGamma);
+    for (auto & item : _timePeaksPos)
     {
-        item.resize(nAlpha_, 0.0);
+        item.resize(_nGamma, 0.0);
     }
 
     process();
@@ -30,11 +30,11 @@ void Calibration::process()
 std::vector<dec_ev_t> Calibration::selectedEvents(uint8_t ig, u_int8_t ia)
 {
     std::vector<dec_ev_t> selectedEvents{};
-    auto it{events_.begin()};
+    auto it{_events.begin()};
 
-    while ( (it = std::find_if(it, events_.end(), [&ig, &ia](dec_ev_t e){
+    while ( (it = std::find_if(it, _events.end(), [&ig, &ia](dec_ev_t e){
                                return e.g.index == ig && e.a.index == ia;
-})) != events_.end() ) {
+})) != _events.end() ) {
         selectedEvents.push_back(*it);
         ++it;
     }
@@ -48,7 +48,7 @@ double Calibration::valueTimeStamp(const dec_ev_t &event)
 
 double Calibration::valueTime(const dec_ev_t &event)
 {
-    return static_cast<double>(event.tdc) - timePeaksPos_.at(event.g.index).at(event.a.index);
+    return static_cast<double>(event.tdc) - _timePeaksPos.at(event.g.index).at(event.a.index);
 }
 
 double Calibration::valueGammaCh(const dec_ev_t &event)
@@ -63,7 +63,7 @@ void Calibration::calculateTimePeaksPos(const std::vector<std::vector<TH1 *> > &
     {
         for (size_t ia{0}; ia <  hists[ig].size(); ++ia)
         {
-            timePeaksPos_[ig][ia] = calculateTimePeakPos(hists[ig][ia]);
+            _timePeaksPos[ig][ia] = calculateTimePeakPos(hists[ig][ia]);
         }
     }
     gErrorIgnoreLevel = 0;
@@ -76,7 +76,7 @@ double Calibration::calculateTimePeakPos(TH1 *hist) const
     auto xMax{hist->GetBinCenter(hist->GetBin(binMax))};
     auto rcAmp{hist->GetBinContent(hist->GetXaxis()->FindBin(xMax - 25.0))};
     auto peakAmp{hist->GetBinContent(binMax) - rcAmp};
-    TF1 *f{new TF1("f", timePeakFitFunctionObject_, xMax - 25.0, xMax + 25.0, 5)};
+    TF1 *f{new TF1("f", _timePeakFitFunctionObject, xMax - 25.0, xMax + 25.0, 5)};
     f->SetParameters(peakAmp, xMax, 5.0, rcAmp, 0.0);
     hist->Fit(f, "RQ");
     timePeakPos = f->GetParameter(1);
@@ -123,9 +123,9 @@ void Calibration::drawHistsToFile(const std::string &psName, const std::vector<s
 void Calibration::prepareHists(const std::string &histName, int nBinsX, double xLow, double xUp, std::vector<std::vector<TH1 *> > &hists)
 {
     std::stringstream ss;
-    for (size_t ig{0}; ig < nGamma_; ++ig)
+    for (size_t ig{0}; ig < _nGamma; ++ig)
     {
-        for (size_t ia{0}; ia <  nAlpha_; ++ia)
+        for (size_t ia{0}; ia <  _nGamma; ++ia)
         {
             ss.clear();ss.str("");
             ss << histName << "_" << ig << "_" << ia;
@@ -186,7 +186,7 @@ void Calibration::processTimeStamp()
 
 void Calibration::processTime()
 {
-    std::vector<std::vector<TH1 *>> hists(nGamma_);
+    std::vector<std::vector<TH1 *>> hists(_nGamma);
     prepareHists("histTime", 400, -100, 100, hists);
 
     fillHistsAsync(hists, std::bind(&Calibration::valueTime, this, std::placeholders::_1));
@@ -206,7 +206,7 @@ void Calibration::processTime()
 
 void Calibration::processGammaAmp()
 {
-    std::vector<std::vector<TH1 *>> hists(nGamma_);
+    std::vector<std::vector<TH1 *>> hists(_nGamma);
     prepareHists("histGammaAmp", 640, 0, 4e3, hists);
 
     fillHistsAsync(hists, std::bind(&Calibration::valueGammaCh, this, std::placeholders::_1));

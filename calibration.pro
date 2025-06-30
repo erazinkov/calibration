@@ -11,6 +11,7 @@ SOURCES += \
         calibration.cpp \
         channelmap.cpp \
         decoder.cpp \
+        filloptions.cpp \
         main.cpp
 
 
@@ -27,4 +28,5 @@ HEADERS += \
     calibration.h \
     channelmap.h \
     decoder.h \
+    filloptions.h \
     progressbar.h

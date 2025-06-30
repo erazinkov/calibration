@@ -15,8 +15,8 @@ public:
     void process();
 
 private:
-    const ChannelMap map_;
-    const std::vector<dec_ev_t> events_;
+    const ChannelMap _map;
+    const std::vector<dec_ev_t> _events;
 
     std::vector<dec_ev_t> selectedEvents(uint8_t ig, u_int8_t ia);
     void fillHist(const std::vector<dec_ev_t> &events, TH1 *h, std::function<double(const dec_ev_t &)>);
@@ -40,9 +40,9 @@ private:
     double valueTime(const dec_ev_t &event);
     double valueGammaCh(const dec_ev_t &event);
 
-    std::vector<std::vector<double>> timePeaksPos_;
-    unsigned long nGamma_;
-    unsigned long nAlpha_;
+    std::vector<std::vector<double>> _timePeaksPos;
+    unsigned long _nGamma;
+    unsigned long _nAlpha;
 
     void calculateTimePeaksPos(const std::vector<std::vector<TH1 *> > &hists);
     double calculateTimePeakPos(TH1 *hist) const;
@@ -63,7 +63,7 @@ private:
            return fitval;
        }
     };
-    TimePeakFitFunctionObject timePeakFitFunctionObject_;
+    TimePeakFitFunctionObject _timePeakFitFunctionObject;
     class AmpPeakFitFunctionObject
     {
     public:
@@ -79,7 +79,7 @@ private:
            return fitval;
        }
     };
-    AmpPeakFitFunctionObject ampPeakFitFunctionObject_;
+    AmpPeakFitFunctionObject _ampPeakFitFunctionObject;
 };
 
 #endif // CALIBRATION_H
