@@ -24,7 +24,7 @@ void Calibration::process()
 {
 //    processTimeStamp();
     processTime();
-    processGammaAmp();
+    processGammaCh();
 }
 
 std::vector<dec_ev_t> Calibration::selectedEvents(uint8_t ig, u_int8_t ia)
@@ -77,6 +77,11 @@ void Calibration::fillHist(const std::vector<dec_ev_t> &events, TH1 *h, FillOpti
     for (const auto & item : events)
     {
         switch (fillOptions.value()) {
+            case Value::CHANNEL:
+            {
+                h->Fill(static_cast<double>(item.g.amp));
+                break;
+            }
             case Value::ENERGY:
             {
                 h->Fill(static_cast<double>(item.g.amp));
@@ -199,14 +204,14 @@ void Calibration::processTime()
     deleteHists(hists);
 }
 
-void Calibration::processGammaAmp()
+void Calibration::processGammaCh()
 {
     std::vector<std::vector<TH1 *>> hists(_nGamma);
     prepareHists("histGammaCh", 640, 0, 4e3, hists);
 
-    using Type = FillOptions::Type;
+    using Type = FillOptions::Value;
 
-    FillOptions fillOptions(Type::ENERGY);
+    FillOptions fillOptions(Type::CHANNEL);
     fillHistsAsync(hists, fillOptions);
 
     const std::string psName{"gamma_ch.ps"};

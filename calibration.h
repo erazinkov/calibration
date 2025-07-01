@@ -39,7 +39,7 @@ private:
 
     void processTimeStamp();
     void processTime();
-    void processGammaAmp();
+    void processGammaCh();
 
     std::vector<std::vector<double>> _timePeaksPos;
     unsigned long _nGamma;

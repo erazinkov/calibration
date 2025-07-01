@@ -6,6 +6,7 @@ class FillOptions
 {
 public:
     enum class Value {
+        CHANNEL,
         ENERGY,
         TIME,
     };
