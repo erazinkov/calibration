@@ -22,10 +22,10 @@ private:
 
     std::vector<dec_ev_t> selectedEvents(uint8_t ig, u_int8_t ia);
 
-    void fillHist(const std::vector<dec_ev_t> &events, TH1 *h, FillOptions &);
+    void fillHist(u_int8_t, u_int8_t, TH1 *h, FillOptions &);
     void fillHistsAsync(const std::vector<std::vector<TH1 *> > &hists, FillOptions &);
 
-
+    void fillChannel(const std::vector<dec_ev_t> &events, const FillRange::Type &type, TH1 *h, double tMin, double tMax);
 
     void drawHistsToFile(const std::string &psName, const std::vector<std::vector<TH1 *> > &hists) const;
     void prepareHists(const std::string &histName,

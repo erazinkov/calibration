@@ -1,11 +1,11 @@
 #include "filloptions.h"
 
-FillOptions::FillOptions(Value value) : _value{value}, _range{Range()}, _useRange{false}
+FillOptions::FillOptions(Value value) : _value{value}, _range{FillRange()}
 {
 
 }
 
-FillOptions::FillOptions(Value value, Range range) : _value{value}, _range{range}, _useRange{true}
+FillOptions::FillOptions(Value value, FillRange range) : _value{value}, _range{range}
 {
 
 }
@@ -15,8 +15,7 @@ FillOptions::Value FillOptions::value() const
     return _value;
 }
 
-bool FillOptions::useRange() const
+const FillRange &FillOptions::range() const
 {
-    return _useRange;
+    return _range;
 }
-

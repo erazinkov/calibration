@@ -12,6 +12,7 @@ SOURCES += \
         channelmap.cpp \
         decoder.cpp \
         filloptions.cpp \
+        fillrange.cpp \
         main.cpp
 
 
@@ -29,4 +30,5 @@ HEADERS += \
     channelmap.h \
     decoder.h \
     filloptions.h \
+    fillrange.h \
     progressbar.h

@@ -70,28 +70,76 @@ double Calibration::calculateTimePeakPos(TH1 *hist) const
     return timePeakPos;
 }
 
-void Calibration::fillHist(const std::vector<dec_ev_t> &events, TH1 *h, FillOptions &fillOptions)
+void Calibration::fillChannel(const std::vector<dec_ev_t> &events, const FillRange::Type &type, TH1 *h, double tMin, double tMax)
 {
-    using Value = FillOptions::Value;
-
-    for (const auto & item : events)
-    {
-        switch (fillOptions.value()) {
-            case Value::CHANNEL:
+    switch (type) {
+        case FillRange::Type::IN:
+        {
+            for (const auto & item : events)
+            {
+                auto tCur{static_cast<double>(item.tdc)};
+                if (tMin >= tCur && tCur <= tMax)
+                {
+                    h->Fill(static_cast<double>(item.g.amp));
+                }
+            }
+            break;
+        }
+        case FillRange::Type::OUT:
+        {
+            for (const auto & item : events)
+            {
+                auto tCur{static_cast<double>(item.tdc)};
+                if (tCur < tMin || tMax < tCur)
+                {
+                    h->Fill(static_cast<double>(item.g.amp));
+                }
+            }
+            break;
+        }
+        case FillRange::Type::IGNORE:
+        {
+            for (const auto & item : events)
             {
                 h->Fill(static_cast<double>(item.g.amp));
-                break;
             }
-            case Value::ENERGY:
-            {
-                h->Fill(static_cast<double>(item.g.amp));
-                break;
-            }
-            case Value::TIME:
-                h->Fill(static_cast<double>(item.tdc));
-                break;
+            break;
         }
     }
+}
+
+void Calibration::fillHist(u_int8_t ig, u_int8_t ia, TH1 *h, FillOptions &fillOptions)
+{
+    const std::vector<dec_ev_t> events{selectedEvents(ig, ia)};
+
+    auto value{fillOptions.value()};
+    switch (value) {
+        case FillOptions::Value::CHANNEL:
+        {
+            auto type{fillOptions.range().type()};
+            fillChannel(events, type, h, _timePeaksPos.at(ig).at(ia) - fillOptions.range().min(), _timePeaksPos.at(ig).at(ia) + fillOptions.range().max());
+            break;
+        }
+        case FillOptions::Value::ENERGY:
+        {
+            for (const auto & item : events)
+            {
+                h->Fill(static_cast<double>(item.g.amp));
+            }
+            break;
+        }
+
+        case FillOptions::Value::TIME:
+        {
+            for (const auto & item : events)
+            {
+                h->Fill(static_cast<double>(item.tdc));
+            }
+            break;
+        }
+
+    }
+
 }
 
 void Calibration::fillHistsAsync(const std::vector<std::vector<TH1 *> > &hists, FillOptions &fillOptions)
@@ -102,8 +150,7 @@ void Calibration::fillHistsAsync(const std::vector<std::vector<TH1 *> > &hists, 
         for (size_t ia{0}; ia <  hists[ig].size(); ++ia)
         {
             futures.emplace_back(std::async(std::launch::async, [this, &hists, &fillOptions] (u_int8_t g, u_int8_t a) {
-                auto sE{selectedEvents(g, a)};
-                fillHist(sE, hists[g][a], fillOptions);
+                fillHist(g, a, hists[g][a], fillOptions);
             }, ig, ia));
         }
     }
@@ -189,9 +236,7 @@ void Calibration::processTime()
     std::vector<std::vector<TH1 *>> hists(_nGamma);
     prepareHists("histTime", 400, -100, 100, hists);
 
-    using Value = FillOptions::Value;
-
-    FillOptions fillOptions(Value::TIME);
+    FillOptions fillOptions(FillOptions::Value::TIME);
     fillHistsAsync(hists, fillOptions);
 
     calculateTimePeaksPos(hists);
@@ -206,17 +251,19 @@ void Calibration::processTime()
 
 void Calibration::processGammaCh()
 {
-    std::vector<std::vector<TH1 *>> hists(_nGamma);
-    prepareHists("histGammaCh", 640, 0, 4e3, hists);
+    std::vector<std::vector<TH1 *>> histsSg(_nGamma);
+//    std::vector<std::vector<TH1 *>> histsBg(_nGamma);
+    prepareHists("histSg", 640, 0, 4e3, histsSg);
+//    prepareHists("histBg", 640, 0, 4e3, histsBg);
 
-    using Type = FillOptions::Value;
+    auto optSg{FillOptions(FillOptions::Value::CHANNEL, FillRange(FillRange::Type::IN, 3, 3))};
+    fillHistsAsync(histsSg, optSg);
 
-    FillOptions fillOptions(Type::CHANNEL);
-    fillHistsAsync(hists, fillOptions);
-
+//    auto optbg{FillOptions(FillOptions::Value::CHANNEL, FillRange(FillRange::Type::OUT, 3, 3))};
+//    fillHistsAsync(histsSg, optSg);
     const std::string psName{"gamma_ch.ps"};
-    drawHistsToFile(psName, hists);
+    drawHistsToFile(psName, histsSg);
 
-    clearHists(hists);
-    deleteHists(hists);
+    clearHists(histsSg);
+    deleteHists(histsSg);
 }

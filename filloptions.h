@@ -1,6 +1,7 @@
 #ifndef FILLOPTIONS_H
 #define FILLOPTIONS_H
 
+#include "fillrange.h"
 
 class FillOptions
 {
@@ -10,26 +11,16 @@ public:
         ENERGY,
         TIME,
     };
-    struct Range {
-        enum class Type {
-            IN,
-            OUT,
-        };
-        double min;
-        double max;
-        Type type;
-    };
     FillOptions(Value value);
-    FillOptions(Value value, Range range);
+    FillOptions(Value value, FillRange range);
 
     Value value() const;
 
-    bool useRange() const;
+    const FillRange &range() const;
 
 private:
     Value _value;
-    Range _range;
-    bool _useRange;
+    FillRange _range;
 };
 
 
