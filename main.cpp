@@ -46,7 +46,8 @@ int main(int argc, char *argv[])
 //    process("/home/egor/shares/tmp/test_period_1_sec_5_min_adcm_1"); //5540182
 
 //    process("/home/egor/shares/tmp/phantom_3_20cm_1");
-    process("/home/egor/shares/tmp/jun19-18.32.43");
+//    process("/home/egor/shares/tmp/jun19-18.32.43");
+    process("/home/egor/shares/tmp/jun16-16.27.36");
 
 
 //    process("/home/egor/shares/tmp/kp_static_1"); // file with bad block

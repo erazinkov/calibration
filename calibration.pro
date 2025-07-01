@@ -31,4 +31,5 @@ HEADERS += \
     decoder.h \
     filloptions.h \
     fillrange.h \
-    progressbar.h
+    progressbar.h \
+    spinner.h

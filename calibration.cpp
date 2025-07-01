@@ -6,6 +6,8 @@
 #include <TF1.h>
 #include <TFile.h>
 
+#include "spinner.h"
+
 Calibration::Calibration(const ChannelMap &map, std::vector<dec_ev_t> &events) : _map(map), _events(events)
 {
     _nGamma = map.numberOfChannelsGamma();
@@ -41,7 +43,37 @@ std::vector<dec_ev_t> Calibration::selectedEvents(uint8_t ig, u_int8_t ia)
     return selectedEvents;
 }
 
-void Calibration::calculateTimePeaksPos(const std::vector<std::vector<TH1 *> > &hists)
+void Calibration::fillHistTime(const std::vector<dec_ev_t> &events, TH1 *h, double offset)
+{
+    for (const auto & item : events)
+    {
+        h->Fill(static_cast<double>(item.tdc) - offset);
+    }
+}
+
+void Calibration::fillHistChannel(const std::vector<dec_ev_t> &events, TH1 *h, double min, double max, bool exclude)
+{
+    for (const auto & item : events)
+    {
+        auto t{static_cast<double>(item.tdc)};
+        if (exclude)
+        {
+            if (t < min || max < t)
+            {
+                h->Fill(static_cast<double>(item.g.amp));
+            }
+        }
+        else
+        {
+            if (min <= t && t <= max)
+            {
+                h->Fill(static_cast<double>(item.g.amp));
+            }
+        }
+    }
+}
+
+void Calibration::calculateTimePeaksPos(std::vector<std::vector<TH1 *> > &hists)
 {
     gErrorIgnoreLevel = 3'000;
     for (size_t ig{0}; ig < hists.size(); ++ig)
@@ -68,97 +100,6 @@ double Calibration::calculateTimePeakPos(TH1 *hist) const
     delete f;
     f = nullptr;
     return timePeakPos;
-}
-
-void Calibration::fillChannel(const std::vector<dec_ev_t> &events, const FillRange::Type &type, TH1 *h, double tMin, double tMax)
-{
-    switch (type) {
-        case FillRange::Type::IN:
-        {
-            for (const auto & item : events)
-            {
-                auto tCur{static_cast<double>(item.tdc)};
-                if (tMin >= tCur && tCur <= tMax)
-                {
-                    h->Fill(static_cast<double>(item.g.amp));
-                }
-            }
-            break;
-        }
-        case FillRange::Type::OUT:
-        {
-            for (const auto & item : events)
-            {
-                auto tCur{static_cast<double>(item.tdc)};
-                if (tCur < tMin || tMax < tCur)
-                {
-                    h->Fill(static_cast<double>(item.g.amp));
-                }
-            }
-            break;
-        }
-        case FillRange::Type::IGNORE:
-        {
-            for (const auto & item : events)
-            {
-                h->Fill(static_cast<double>(item.g.amp));
-            }
-            break;
-        }
-    }
-}
-
-void Calibration::fillHist(u_int8_t ig, u_int8_t ia, TH1 *h, FillOptions &fillOptions)
-{
-    const std::vector<dec_ev_t> events{selectedEvents(ig, ia)};
-
-    auto value{fillOptions.value()};
-    switch (value) {
-        case FillOptions::Value::CHANNEL:
-        {
-            auto type{fillOptions.range().type()};
-            fillChannel(events, type, h, _timePeaksPos.at(ig).at(ia) - fillOptions.range().min(), _timePeaksPos.at(ig).at(ia) + fillOptions.range().max());
-            break;
-        }
-        case FillOptions::Value::ENERGY:
-        {
-            for (const auto & item : events)
-            {
-                h->Fill(static_cast<double>(item.g.amp));
-            }
-            break;
-        }
-
-        case FillOptions::Value::TIME:
-        {
-            for (const auto & item : events)
-            {
-                h->Fill(static_cast<double>(item.tdc));
-            }
-            break;
-        }
-
-    }
-
-}
-
-void Calibration::fillHistsAsync(const std::vector<std::vector<TH1 *> > &hists, FillOptions &fillOptions)
-{
-    std::vector<std::future<void>> futures;
-    for (size_t ig{0}; ig < hists.size(); ++ig)
-    {
-        for (size_t ia{0}; ia <  hists[ig].size(); ++ia)
-        {
-            futures.emplace_back(std::async(std::launch::async, [this, &hists, &fillOptions] (u_int8_t g, u_int8_t a) {
-                fillHist(g, a, hists[g][a], fillOptions);
-            }, ig, ia));
-        }
-    }
-
-    for (size_t i{0}; i < futures.size(); ++i)
-    {
-        futures[i].get();
-    }
 }
 
 void Calibration::drawHistsToFile(const std::string &psName, const std::vector<std::vector<TH1 *> > &hists) const
@@ -190,40 +131,51 @@ void Calibration::drawHistsToFile(const std::string &psName, const std::vector<s
 void Calibration::prepareHists(const std::string &histName, int nBinsX, double xLow, double xUp, std::vector<std::vector<TH1 *> > &hists)
 {
     std::stringstream ss;
-    for (size_t ig{0}; ig < _nGamma; ++ig)
+    for (size_t i{0}; i < hists.size(); ++i)
     {
-        for (size_t ia{0}; ia <  _nAlpha; ++ia)
+        for (size_t j{0}; j <  hists.at(i).size(); ++j)
         {
             ss.clear();ss.str("");
-            ss << histName << "_" << ig << "_" << ia;
+            ss << histName << "_" << i << "_" << j;
             TH1 *h{new TH1D(ss.str().c_str(), ss.str().c_str(), nBinsX, xLow, xUp)};
-            hists[ig].push_back(h);
+            hists.at(i).at(j) = h;
         }
+    }
+}
+
+void Calibration::prepareHists(const std::string &histName, int nBinsX, double xLow, double xUp, std::vector<TH1 *> &hists)
+{
+    std::stringstream ss;
+    for (size_t i{0}; i < hists.size(); ++i)
+    {
+        ss.clear();ss.str("");
+        ss << histName << "_" << i;
+        TH1 *h{new TH1D(ss.str().c_str(), ss.str().c_str(), nBinsX, xLow, xUp)};
+        hists.at(i) = h;
     }
 }
 
 void Calibration::clearHists(std::vector<std::vector<TH1 *> > &hists)
 {
-    for (size_t ig{0}; ig < hists.size(); ++ig)
+    for (size_t i{0}; i < hists.size(); ++i)
     {
-        for (size_t ia{0}; ia <  hists.at(ig).size(); ++ia)
+        for (size_t j{0}; j <  hists.at(i).size(); ++j)
         {
-            hists[ig][ia]->Reset();
+            hists.at(i).at(j)->Reset();
         }
     }
 }
 
 void Calibration::deleteHists(std::vector<std::vector<TH1 *> > &hists)
 {
-    for (size_t ig{0}; ig < hists.size(); ++ig)
+    for (size_t i{0}; i < hists.size(); ++i)
     {
-        for (size_t ia{0}; ia <  hists.at(ig).size(); ++ia)
+        for (size_t j{0}; j <  hists.at(i).size(); ++j)
         {
-            delete hists[ig][ia];
-            hists[ig][ia] = nullptr;
+            delete hists[i][j];
+            hists[i][j] = nullptr;
         }
     }
-    hists.clear();
 }
 
 void Calibration::processTimeStamp()
@@ -234,10 +186,30 @@ void Calibration::processTimeStamp()
 void Calibration::processTime()
 {
     std::vector<std::vector<TH1 *>> hists(_nGamma);
+    for (size_t i{0}; i < hists.size(); ++i)
+    {
+        hists.at(i).resize(_nAlpha);
+    }
     prepareHists("histTime", 400, -100, 100, hists);
 
-    FillOptions fillOptions(FillOptions::Value::TIME);
-    fillHistsAsync(hists, fillOptions);
+    std::vector<std::future<void>> futures;
+    for (size_t i{0}; i < hists.size(); ++i)
+    {
+        for (size_t j{0}; j <  hists.at(i).size(); ++j)
+        {
+            futures.emplace_back(std::async(std::launch::async, [this] (u_int8_t g, u_int8_t a, TH1 *h) {
+                auto sE{selectedEvents(g, a)};
+                fillHistTime(sE, h, 0.0);
+            }, i, j, hists.at(i).at(j)));
+        }
+    }
+
+    for (size_t i{0}; i < futures.size(); ++i)
+    {
+        futures[i].get();
+    }
+
+    futures.clear();
 
     calculateTimePeaksPos(hists);
 
@@ -245,25 +217,67 @@ void Calibration::processTime()
     drawHistsToFile(psName, hists);
 
     clearHists(hists);
-
     deleteHists(hists);
 }
 
 void Calibration::processGammaCh()
 {
     std::vector<std::vector<TH1 *>> histsSg(_nGamma);
-//    std::vector<std::vector<TH1 *>> histsBg(_nGamma);
+    std::vector<std::vector<TH1 *>> histsBg(_nGamma);
+    std::vector<std::vector<TH1 *>> histsD(_nGamma);
+    for (size_t i{0}; i < histsSg.size(); ++i)
+    {
+        histsSg.at(i).resize(_nAlpha);
+        histsBg.at(i).resize(_nAlpha);
+        histsD.at(i).resize(_nAlpha);
+    }
     prepareHists("histSg", 640, 0, 4e3, histsSg);
-//    prepareHists("histBg", 640, 0, 4e3, histsBg);
+    prepareHists("histBg", 640, 0, 4e3, histsBg);
+    prepareHists("histD", 640, 0, 4e3, histsD);
 
-    auto optSg{FillOptions(FillOptions::Value::CHANNEL, FillRange(FillRange::Type::IN, 3, 3))};
-    fillHistsAsync(histsSg, optSg);
+    std::vector<std::future<void>> futures;
+    for (size_t i{0}; i < histsSg.size(); ++i)
+    {
+        for (size_t j{0}; j <  histsSg.at(i).size(); ++j)
+        {
+            futures.emplace_back(std::async(std::launch::async, [this] (u_int8_t g, u_int8_t a, TH1 *hSg, TH1 *hBg) {
+                auto sE{selectedEvents(g, a)};
+                auto tSgMin{_timePeaksPos.at(g).at(a) - 3.0};
+                auto tSgMax{_timePeaksPos.at(g).at(a) + 3.0};
+                fillHistChannel(sE, hSg, tSgMin, tSgMax, false);
+                auto tBgMin{_timePeaksPos.at(g).at(a) - 30.0};
+                auto tBgMax{_timePeaksPos.at(g).at(a) - 20.0};
+                fillHistChannel(sE, hBg, tBgMin, tBgMax, false);
+            }, i, j, histsSg.at(i).at(j), histsBg.at(i).at(j)));
 
-//    auto optbg{FillOptions(FillOptions::Value::CHANNEL, FillRange(FillRange::Type::OUT, 3, 3))};
-//    fillHistsAsync(histsSg, optSg);
+        }
+    }
+
+    for (size_t i{0}; i < futures.size(); ++i)
+    {
+        futures[i].get();
+    }
+
+    futures.clear();
+
+
+    for (size_t i{0}; i < histsD.size(); ++i)
+    {
+        for (size_t j{0}; j < histsD.at(i).size(); ++j)
+        {
+            histsD.at(i).at(j)->Add(histsSg.at(i).at(j));
+            histsD.at(i).at(j)->Add(histsBg.at(i).at(j), -6.0 / 10.0);
+        }
+    }
+
+
     const std::string psName{"gamma_ch.ps"};
-    drawHistsToFile(psName, histsSg);
+
+    drawHistsToFile(psName, histsD);
 
     clearHists(histsSg);
     deleteHists(histsSg);
+
+    clearHists(histsBg);
+    deleteHists(histsBg);
 }

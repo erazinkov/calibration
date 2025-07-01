@@ -17,15 +17,18 @@ public:
     void process();
 
 private:
+
+    enum class Range {
+
+    };
+
     const ChannelMap _map;
     const std::vector<dec_ev_t> _events;
 
     std::vector<dec_ev_t> selectedEvents(uint8_t ig, u_int8_t ia);
 
-    void fillHist(u_int8_t, u_int8_t, TH1 *h, FillOptions &);
-    void fillHistsAsync(const std::vector<std::vector<TH1 *> > &hists, FillOptions &);
-
-    void fillChannel(const std::vector<dec_ev_t> &events, const FillRange::Type &type, TH1 *h, double tMin, double tMax);
+    void fillHistTime(const std::vector<dec_ev_t> &, TH1 *, double);
+    void fillHistChannel(const std::vector<dec_ev_t> &events, TH1 *h, double min, double max, bool exclude);
 
     void drawHistsToFile(const std::string &psName, const std::vector<std::vector<TH1 *> > &hists) const;
     void prepareHists(const std::string &histName,
@@ -33,6 +36,11 @@ private:
                       double xLow,
                       double xUp,
                       std::vector<std::vector<TH1 *>> &hists);
+    void prepareHists(const std::string &histName,
+                      int nBinsX,
+                      double xLow,
+                      double xUp,
+                      std::vector<TH1 *> &hists);
     void clearHists(std::vector<std::vector<TH1 *>> &hists);
     void deleteHists(std::vector<std::vector<TH1 *>> &hists);
 
@@ -45,7 +53,7 @@ private:
     unsigned long _nGamma;
     unsigned long _nAlpha;
 
-    void calculateTimePeaksPos(const std::vector<std::vector<TH1 *> > &hists);
+    void calculateTimePeaksPos(std::vector<std::vector<TH1 *> > &hists);
     double calculateTimePeakPos(TH1 *hist) const;
 
     class TimePeakFitFunctionObject
