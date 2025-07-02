@@ -11,9 +11,8 @@ SOURCES += \
         calibration.cpp \
         channelmap.cpp \
         decoder.cpp \
-        filloptions.cpp \
-        fillrange.cpp \
-        main.cpp
+        main.cpp \
+        peakfinder.cpp
 
 
 INCLUDEPATH += $$system(root-config --incdir)
@@ -29,7 +28,6 @@ HEADERS += \
     calibration.h \
     channelmap.h \
     decoder.h \
-    filloptions.h \
-    fillrange.h \
+    peakfinder.h \
     progressbar.h \
     spinner.h

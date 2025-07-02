@@ -8,7 +8,6 @@
 
 #include "adcm_df.h"
 #include "channelmap.h"
-#include "filloptions.h"
 
 class Calibration
 {
@@ -16,11 +15,19 @@ public:
     Calibration(const ChannelMap &map, std::vector<dec_ev_t> &events);
     void process();
 
+    static inline constexpr int BINS_TIME{400};
+    static inline constexpr int BINS_CHANNEL{400};
+    static inline constexpr int BINS_ENERGY{640};
+
+    static inline constexpr double XLOW_TIME{-100.0};
+    static inline constexpr double XLOW_CHANNEL{0.0};
+    static inline constexpr double XLOW_ENERGY{0.0};
+
+    static inline constexpr double XUP_TIME{100.0};
+    static inline constexpr double XUP_CHANNEL{4.0e3};
+    static inline constexpr double XUP_ENERGY{8.0e3};
+
 private:
-
-    enum class Range {
-
-    };
 
     const ChannelMap _map;
     const std::vector<dec_ev_t> _events;
@@ -62,12 +69,22 @@ private:
         TimePeakFitFunctionObject(){}
 
         double operator() (double *x, double *par) {
-           double arg{0};
-           if (par[2] != 0.0)
+           double arg_1{0.0}, arg_2{0.0}, arg_3{0.0}, arg_4{0.0};
+           if (par[2] != 0.0 && par[5] != 0.0 && par[8] != 0.0)
            {
-               arg = ( x[0] - par[1] ) / par[2];
+               arg_1 = ( x[0] - par[1] ) / par[2];
+               arg_2 = ( x[0] - ( par[1] + par[4] ) ) / par[5];
+               arg_3 = ( x[0] - ( par[1] + par[7] ) ) / par[8];
+               arg_4 = x[0];
            }
-           double fitval{par[0] * TMath::Exp(-0.5 * arg * arg) + par[3] + par[4] * x[0]};
+
+           double fitval{
+               par[0] * TMath::Exp( -0.5 * arg_1 * arg_1 ) +
+               par[3] * TMath::Exp( -0.5 * arg_2 * arg_2 ) +
+               par[6] * TMath::Exp( -0.5 * arg_3 * arg_3 ) +
+               par[9] + par[10] * arg_4
+           };
+
            return fitval;
        }
     };

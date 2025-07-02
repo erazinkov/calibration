@@ -8,6 +8,8 @@
 
 #include "spinner.h"
 
+#include "peakfinder.h"
+
 Calibration::Calibration(const ChannelMap &map, std::vector<dec_ev_t> &events) : _map(map), _events(events)
 {
     _nGamma = map.numberOfChannelsGamma();
@@ -25,7 +27,7 @@ Calibration::Calibration(const ChannelMap &map, std::vector<dec_ev_t> &events) :
 void Calibration::process()
 {
 //    processTimeStamp();
-    processTime();
+   processTime();
     processGammaCh();
 }
 
@@ -78,9 +80,9 @@ void Calibration::calculateTimePeaksPos(std::vector<std::vector<TH1 *> > &hists)
     gErrorIgnoreLevel = 3'000;
     for (size_t ig{0}; ig < hists.size(); ++ig)
     {
-        for (size_t ia{0}; ia <  hists[ig].size(); ++ia)
+        for (size_t ia{0}; ia <  hists.at(ig).size(); ++ia)
         {
-            _timePeaksPos[ig][ia] = calculateTimePeakPos(hists[ig][ia]);
+            _timePeaksPos.at(ig).at(ia) = calculateTimePeakPos(hists.at(ig).at(ia));
         }
     }
     gErrorIgnoreLevel = 0;
@@ -88,17 +90,80 @@ void Calibration::calculateTimePeaksPos(std::vector<std::vector<TH1 *> > &hists)
 
 double Calibration::calculateTimePeakPos(TH1 *hist) const
 {
+    hist->Rebin();
     auto timePeakPos{0.0};
+
     auto binMax{hist->GetMaximumBin()};
     auto xMax{hist->GetBinCenter(hist->GetBin(binMax))};
     auto rcAmp{hist->GetBinContent(hist->GetXaxis()->FindBin(xMax - 25.0))};
-    auto peakAmp{hist->GetBinContent(binMax) - rcAmp};
-    TF1 *f{new TF1("f", _timePeakFitFunctionObject, xMax - 25.0, xMax + 25.0, 5)};
-    f->SetParameters(peakAmp, xMax, 5.0, rcAmp, 0.0);
+    auto obPeakAmp{hist->GetBinContent(binMax) - rcAmp};
+    auto snPeakAmp{0.5 * obPeakAmp};
+    TF1 *f{new TF1("f", _timePeakFitFunctionObject, xMax - 15.0, xMax + 25.0, 11)};
+
+    f->SetParameter(0, obPeakAmp);
+    f->SetParameter(1, xMax);
+    f->SetParameter(2, 0.5 * ( 1.5 + 3.0 ));
+    f->SetParameter(6, 0.05 * obPeakAmp);
+    f->SetParameter(7, -10.0);
+    f->SetParameter(8, 2.5);
+    f->SetParameter(9, rcAmp);
+    f->FixParameter(10, 0.0);
+
+    f->SetParLimits(1, 0.9 * xMax, 1.1 * xMax);
+    f->SetParLimits(2, 1.5, 3.0);
+    f->SetParLimits(3, 0.0, snPeakAmp);
+    f->SetParLimits(4, 5.0, 20.0);
+    f->SetParLimits(5, 2.0, 7.0);
+    f->SetParLimits(6, 0.0, 0.25 * obPeakAmp);
+    f->SetParLimits(7, -15.0, -7.5);
+    f->SetParLimits(8, 2.25, 2.75);
+
+    hist->GetXaxis()->SetRangeUser(f->GetParameter(1) - 40.0, f->GetParameter(1) + 25.0);
+
     hist->Fit(f, "RQ");
+
+    auto ff = [](double *x, double *par){
+        double arg{0};
+        if (par[2] != 0.0)
+        {
+            arg = ( x[0] - par[1] ) / par[2];
+        }
+        double fitval{par[0] * TMath::Exp(-0.5 * arg * arg) + par[3] + par[4] * x[0]};
+        return fitval;
+    };
+
+    TF1 *fOb{new TF1("fOb", ff, xMax - 15.0, xMax + 25.0, 5)};
+    fOb->SetParameters(f->GetParameter(0),
+                       f->GetParameter(1),
+                       f->GetParameter(2),
+                       f->GetParameter(9),
+                       f->GetParameter(10));
+    fOb->SetLineColor(kGreen);
+    TF1 *fB{new TF1("fB", ff, xMax - 15.0, xMax + 25.0, 5)};
+    fB->SetParameters(f->GetParameter(6),
+                       f->GetParameter(1) + f->GetParameter(7),
+                       f->GetParameter(8),
+                       f->GetParameter(9),
+                       f->GetParameter(10));
+    fB->SetLineColor(kMagenta);
+    TF1 *fSn{new TF1("fSn", ff, xMax - 15.0, xMax + 25.0, 5)};
+    fSn->SetParameters(f->GetParameter(3),
+                       f->GetParameter(1) + f->GetParameter(4),
+                       f->GetParameter(5),
+                       f->GetParameter(9),
+                       f->GetParameter(10));
+    fSn->SetLineColor(kBlue);
+
+    hist->GetListOfFunctions()->Add(fOb);
+    hist->GetListOfFunctions()->Add(fB);
+    hist->GetListOfFunctions()->Add(fSn);
+
     timePeakPos = f->GetParameter(1);
+
+
     delete f;
     f = nullptr;
+
     return timePeakPos;
 }
 
@@ -109,13 +174,13 @@ void Calibration::drawHistsToFile(const std::string &psName, const std::vector<s
     c->Print((psName + '[').c_str());
     for (size_t ig{0}; ig < hists.size(); ++ig)
     {
-        auto cd{static_cast<int>(std::ceil(std::sqrt(hists[ig].size())))};
+        auto cd{static_cast<int>(std::ceil(std::sqrt(hists.at(ig).size())))};
         c->Divide(cd, cd);
-        for (size_t ia{0}; ia <  hists[ig].size(); ++ia)
+        for (size_t ia{0}; ia <  hists.at(ig).size(); ++ia)
         {
             c->cd(static_cast<int>(ia) + 1);
             hists[ig][ia]->Draw();
-            auto listOfFunctions{hists[ig][ia]->GetListOfFunctions()};
+            auto listOfFunctions{hists.at(ig).at(ia)->GetListOfFunctions()};
             for (auto *item : *listOfFunctions)
             {
                 item->Draw("SAME");
@@ -138,6 +203,7 @@ void Calibration::prepareHists(const std::string &histName, int nBinsX, double x
             ss.clear();ss.str("");
             ss << histName << "_" << i << "_" << j;
             TH1 *h{new TH1D(ss.str().c_str(), ss.str().c_str(), nBinsX, xLow, xUp)};
+            h->Sumw2();
             hists.at(i).at(j) = h;
         }
     }
@@ -151,6 +217,7 @@ void Calibration::prepareHists(const std::string &histName, int nBinsX, double x
         ss.clear();ss.str("");
         ss << histName << "_" << i;
         TH1 *h{new TH1D(ss.str().c_str(), ss.str().c_str(), nBinsX, xLow, xUp)};
+        h->Sumw2();
         hists.at(i) = h;
     }
 }
@@ -172,8 +239,8 @@ void Calibration::deleteHists(std::vector<std::vector<TH1 *> > &hists)
     {
         for (size_t j{0}; j <  hists.at(i).size(); ++j)
         {
-            delete hists[i][j];
-            hists[i][j] = nullptr;
+            delete hists.at(i).at(j);
+            hists.at(i).at(j) = nullptr;
         }
     }
 }
@@ -188,9 +255,9 @@ void Calibration::processTime()
     std::vector<std::vector<TH1 *>> hists(_nGamma);
     for (size_t i{0}; i < hists.size(); ++i)
     {
-        hists.at(i).resize(_nAlpha);
+        hists.at(i).resize(_nAlpha, nullptr);
     }
-    prepareHists("histTime", 400, -100, 100, hists);
+    prepareHists("histTime", BINS_TIME, XLOW_TIME, XLOW_TIME, hists);
 
     std::vector<std::future<void>> futures;
     for (size_t i{0}; i < hists.size(); ++i)
@@ -224,32 +291,32 @@ void Calibration::processGammaCh()
 {
     std::vector<std::vector<TH1 *>> histsSg(_nGamma);
     std::vector<std::vector<TH1 *>> histsBg(_nGamma);
-    std::vector<std::vector<TH1 *>> histsD(_nGamma);
+    std::vector<std::vector<TH1 *>> histsRc(_nGamma);
     for (size_t i{0}; i < histsSg.size(); ++i)
     {
-        histsSg.at(i).resize(_nAlpha);
-        histsBg.at(i).resize(_nAlpha);
-        histsD.at(i).resize(_nAlpha);
+        histsSg.at(i).resize(_nAlpha, nullptr);
+        histsBg.at(i).resize(_nAlpha, nullptr);
+        histsRc.at(i).resize(_nAlpha, nullptr);
     }
-    prepareHists("histSg", 640, 0, 4e3, histsSg);
-    prepareHists("histBg", 640, 0, 4e3, histsBg);
-    prepareHists("histD", 640, 0, 4e3, histsD);
+    prepareHists("histSg", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, histsSg);
+    prepareHists("histBg", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, histsBg);
+    prepareHists("histRc", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, histsRc);
 
     std::vector<std::future<void>> futures;
     for (size_t i{0}; i < histsSg.size(); ++i)
     {
         for (size_t j{0}; j <  histsSg.at(i).size(); ++j)
         {
-            futures.emplace_back(std::async(std::launch::async, [this] (u_int8_t g, u_int8_t a, TH1 *hSg, TH1 *hBg) {
+            futures.emplace_back(std::async(std::launch::async, [this] (uint8_t g, uint8_t a, TH1 *hSg, TH1 *hBg, TH1 *hRc) {
                 auto sE{selectedEvents(g, a)};
                 auto tSgMin{_timePeaksPos.at(g).at(a) - 3.0};
                 auto tSgMax{_timePeaksPos.at(g).at(a) + 3.0};
                 fillHistChannel(sE, hSg, tSgMin, tSgMax, false);
+                fillHistChannel(sE, hRc, tSgMin, tSgMax, true);
                 auto tBgMin{_timePeaksPos.at(g).at(a) - 30.0};
                 auto tBgMax{_timePeaksPos.at(g).at(a) - 20.0};
                 fillHistChannel(sE, hBg, tBgMin, tBgMax, false);
-            }, i, j, histsSg.at(i).at(j), histsBg.at(i).at(j)));
-
+            }, i, j, histsSg.at(i).at(j), histsBg.at(i).at(j), histsRc.at(i).at(j)));
         }
     }
 
@@ -260,20 +327,42 @@ void Calibration::processGammaCh()
 
     futures.clear();
 
+    std::vector<TH1 *> histsSgGamma(_nGamma, nullptr);
+    prepareHists("histSgGamma", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, histsSgGamma);
 
-    for (size_t i{0}; i < histsD.size(); ++i)
+    for (size_t i{0}; i < histsSg.size(); ++i)
     {
-        for (size_t j{0}; j < histsD.at(i).size(); ++j)
+        for (size_t j{0}; j < histsSg.at(i).size(); ++j)
         {
-            histsD.at(i).at(j)->Add(histsSg.at(i).at(j));
-            histsD.at(i).at(j)->Add(histsBg.at(i).at(j), -6.0 / 10.0);
+            histsSgGamma.at(i)->Add(histsSg.at(i).at(j));
+            histsSgGamma.at(i)->Add(histsBg.at(i).at(j), -6.0 / 10.0);
         }
     }
 
 
+    std::vector<TH1 *> histsRcGamma(_nGamma, nullptr);
+    prepareHists("histRcGamma", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, histsRcGamma);
+
+    for (size_t i{0}; i < histsRc.size(); ++i)
+    {
+        for (size_t j{0}; j < histsRc.at(i).size(); ++j)
+        {
+            histsRcGamma.at(i)->Add(histsRc.at(i).at(j));
+        }
+    }
+
+    PeakFinder peakFinder;
+    peakFinder.getFerrum847PosApprox(histsRcGamma.at(0), 0.12);
+
     const std::string psName{"gamma_ch.ps"};
 
-    drawHistsToFile(psName, histsD);
+    std::unique_ptr<TCanvas> c{new TCanvas("c", "c", 1024, 960)};
+    c->Print((psName + '[').c_str());
+    histsRcGamma.at(0)->Draw();
+//    histsSgGamma.at(0)->Draw();
+    c->Print((psName + ']').c_str());
+    c->Print(psName.c_str());
+//    drawHistsToFile(psName, histsD);
 
     clearHists(histsSg);
     deleteHists(histsSg);
