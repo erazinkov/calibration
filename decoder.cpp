@@ -52,6 +52,7 @@ void Decoder::process()
         return std::abs(currentTs - prevTs) > limit;
     };
 
+
     while (ifs_)
     {
         ifs_ >> hdr;
@@ -115,6 +116,7 @@ void Decoder::process()
             {
                 hdr.size -= sizeof(stor_packet_hdr_t);
                 ifs_.ignore(hdr.size);
+                continue;
             }
             ifs_ >> counters;
             for (size_t i{0}; i < pre_.map().size(); ++i)

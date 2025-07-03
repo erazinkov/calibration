@@ -36,6 +36,7 @@ private:
 
     void fillHistTime(const std::vector<dec_ev_t> &, TH1 *, double);
     void fillHistChannel(const std::vector<dec_ev_t> &events, TH1 *h, double min, double max, bool exclude);
+    void fillHistEnergy(const std::vector<dec_ev_t> &events, TH1 *h, double min, double max, bool exclude, TF1 f);
 
     void drawHistsToFile(const std::string &psName, const std::vector<std::vector<TH1 *> > &hists) const;
     void prepareHists(const std::string &histName,
@@ -49,14 +50,17 @@ private:
                       double xUp,
                       std::vector<TH1 *> &hists);
     void clearHists(std::vector<std::vector<TH1 *>> &hists);
+    void clearHists(std::vector<TH1 *> &hists);
     void deleteHists(std::vector<std::vector<TH1 *>> &hists);
-
+    void deleteHists(std::vector<TH1 *> &hists);
 
     void processTimeStamp();
     void processTime();
     void processGammaCh();
+    void processGammaEnergy();
 
     std::vector<std::vector<double>> _timePeaksPos;
+    std::vector<std::vector<double>> _par;
     unsigned long _nGamma;
     unsigned long _nAlpha;
 
