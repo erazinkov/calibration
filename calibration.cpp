@@ -31,7 +31,7 @@ void Calibration::process()
 //    processTimeStamp();
    processTime();
     processGammaCh();
-    processGammaEnergy();
+//    processGammaEnergy();
 }
 
 std::vector<dec_ev_t> Calibration::selectedEvents(uint8_t ig, u_int8_t ia)

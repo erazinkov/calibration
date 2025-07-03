@@ -14,18 +14,12 @@ void PeakFinder::process(std::vector<TH1 *> &histsSg, std::vector<TH1 *> &histsR
 {
     TVirtualFitter::SetDefaultFitter("Minuit");
 
-    const std::string psName{"gamma_calib.ps"};
-    std::unique_ptr<TCanvas> c{new TCanvas("c", "c", 1024, 960)};
-    c.get()->Divide(2, 2);
-    c.get()->Print((psName + '[').c_str());
-
     auto n{histsSg.size()};
 
     _f.resize(n, nullptr);
 
     for (size_t i{0}; i < n; ++i)
     {
-
         _f.at(i) = new TF1(("fN_" + std::to_string(i)).c_str(), "pol3", 0.0, 8.0e3);
         TGraphErrors graphPolN(5);
         auto fe847PosApprox{getFerrum847PosApprox(histsRc.at(i), 0.12)};
@@ -60,15 +54,21 @@ void PeakFinder::process(std::vector<TH1 *> &histsSg, std::vector<TH1 *> &histsR
         graphPolN.SetPoint(5, fe7631Pos, 7631.0);
         _f.at(i)->SetParameters(25.0, 2.5, 2.5 * 1e-4, -1.0 * 1e-8);
         graphPolN.Fit(_f.at(i), "RQ");
+    }
 
+    const std::string psName{"gamma_calib.ps"};
+    std::unique_ptr<TCanvas> c{new TCanvas("c", "c", 900, 700)};
+    c.get()->Divide(1, 2);
+    c.get()->Print((psName + '[').c_str());
+    for (size_t i{0}; i < n; ++i)
+    {
         c.get()->cd(1);
         histsSg.at(i)->Draw();
-//        c.get()->cd(2);
-//        histsRc.at(i)->Draw();
+        c.get()->cd(2);
+        histsRc.at(i)->Draw();
+        c.get()->Print(psName.c_str());
     }
-    c.get()->Print(psName.c_str());
     c.get()->Print((psName + ']').c_str());
-    //    c->Print(psName.c_str());
 }
 
 std::vector<std::vector<double> > PeakFinder::getPar()
