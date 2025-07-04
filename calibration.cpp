@@ -10,6 +10,74 @@
 
 #include "peakfinder.h"
 
+#include <thread>
+#include <functional>
+
+class ThreadPool {
+public:
+    ThreadPool(unsigned int n_threads) : stop(false), busy_threads(0) {
+        for (unsigned int i = 0; i < n_threads; ++i) {
+            workers.emplace_back([this] {
+                while (true) {
+                    std::function<void()> task;
+                    {
+                        std::unique_lock<std::mutex> lock(queue_mutex);
+                        cv_task.wait(lock, [this] { return stop || !tasks.empty(); });
+                        if (stop && tasks.empty()) {
+                            return;
+                        }
+                        task = std::move(tasks.front());
+                        tasks.pop();
+                        busy_threads++; // Increment busy thread count
+                    }
+                    task();
+                    {
+                        std::unique_lock<std::mutex> lock(queue_mutex);
+                        busy_threads--; // Decrement busy thread count
+                        if (tasks.empty() && busy_threads == 0) {
+                            cv_finished.notify_all(); // Notify if all tasks are done
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    template<typename F, typename ...Args>
+    void enqueue(F &&f, Args &&...args) {
+        {
+            std::unique_lock<std::mutex> lock(queue_mutex);
+            tasks.emplace(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
+        }
+        cv_task.notify_one();
+    }
+
+    void waitFinished() {
+        std::unique_lock<std::mutex> lock(queue_mutex);
+        cv_finished.wait(lock, [this] { return tasks.empty() && busy_threads == 0; });
+    }
+
+    ~ThreadPool() {
+        {
+            std::unique_lock<std::mutex> lock(queue_mutex);
+            stop = true;
+        }
+        cv_task.notify_all();
+        for (auto &worker : workers) {
+            worker.join();
+        }
+    }
+
+private:
+    std::vector<std::thread> workers;
+    std::queue<std::function<void()>> tasks;
+    std::mutex queue_mutex;
+    std::condition_variable cv_task;
+    std::condition_variable cv_finished;
+    bool stop;
+    std::atomic<int> busy_threads; // Atomic counter for busy threads
+};
+
 Calibration::Calibration(const ChannelMap &map, std::vector<dec_ev_t> &events) : _map(map), _events(events)
 {
     _nGamma = map.numberOfChannelsGamma();
@@ -29,8 +97,8 @@ Calibration::Calibration(const ChannelMap &map, std::vector<dec_ev_t> &events) :
 void Calibration::process()
 {
 //    processTimeStamp();
-   processTime();
-    processGammaCh();
+    processTime();
+//    processGammaCh();
 //    processGammaEnergy();
 }
 
@@ -304,7 +372,10 @@ void Calibration::processTime()
     {
         hists.at(i).resize(_nAlpha, nullptr);
     }
+
     prepareHists("histTime", BINS_TIME, XLOW_TIME, XUP_TIME, hists);
+
+    auto start = std::chrono::steady_clock::now();
 
     std::vector<std::future<void>> futures;
     for (size_t i{0}; i < hists.size(); ++i)
@@ -320,16 +391,38 @@ void Calibration::processTime()
 
     for (size_t i{0}; i < futures.size(); ++i)
     {
-        futures[i].get();
+        futures.at(i).wait();
     }
 
     futures.clear();
 
-    calculateTimePeaksPos(hists);
+    auto stop = std::chrono::steady_clock::now();
+    std::cout << "Time elapsed, ms: " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << std::endl;
+
+
+//    std::vector<std::future<void>> futures;
+//    for (size_t i{0}; i < hists.size(); ++i)
+//    {
+//        futures.emplace_back(std::async(std::launch::async, [this] (u_int8_t g, std::vector<TH1 *> hists) {
+//            for (size_t a{0}; a < hists.size(); ++a)
+//            {
+//                auto sE{selectedEvents(g, static_cast<u_int8_t>(a))};
+//                fillHistTime(sE, hists.at(a), 0.0);
+//            }
+//        }, i, hists.at(i)));
+//    }
+
+//    for (size_t i{0}; i < futures.size(); ++i)
+//    {
+//        futures.at(i).get();
+//    }
+
+
+
+//    calculateTimePeaksPos(hists);
 
     const std::string psName{"time.ps"};
     drawHistsToFile(psName, hists);
-
     clearHists(hists);
     deleteHists(hists);
 }
