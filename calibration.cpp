@@ -10,73 +10,9 @@
 
 #include "peakfinder.h"
 
-#include <thread>
 #include <functional>
 
-class ThreadPool {
-public:
-    ThreadPool(unsigned int n_threads) : stop(false), busy_threads(0) {
-        for (unsigned int i = 0; i < n_threads; ++i) {
-            workers.emplace_back([this] {
-                while (true) {
-                    std::function<void()> task;
-                    {
-                        std::unique_lock<std::mutex> lock(queue_mutex);
-                        cv_task.wait(lock, [this] { return stop || !tasks.empty(); });
-                        if (stop && tasks.empty()) {
-                            return;
-                        }
-                        task = std::move(tasks.front());
-                        tasks.pop();
-                        busy_threads++; // Increment busy thread count
-                    }
-                    task();
-                    {
-                        std::unique_lock<std::mutex> lock(queue_mutex);
-                        busy_threads--; // Decrement busy thread count
-                        if (tasks.empty() && busy_threads == 0) {
-                            cv_finished.notify_all(); // Notify if all tasks are done
-                        }
-                    }
-                }
-            });
-        }
-    }
-
-    template<typename F, typename ...Args>
-    void enqueue(F &&f, Args &&...args) {
-        {
-            std::unique_lock<std::mutex> lock(queue_mutex);
-            tasks.emplace(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
-        }
-        cv_task.notify_one();
-    }
-
-    void waitFinished() {
-        std::unique_lock<std::mutex> lock(queue_mutex);
-        cv_finished.wait(lock, [this] { return tasks.empty() && busy_threads == 0; });
-    }
-
-    ~ThreadPool() {
-        {
-            std::unique_lock<std::mutex> lock(queue_mutex);
-            stop = true;
-        }
-        cv_task.notify_all();
-        for (auto &worker : workers) {
-            worker.join();
-        }
-    }
-
-private:
-    std::vector<std::thread> workers;
-    std::queue<std::function<void()>> tasks;
-    std::mutex queue_mutex;
-    std::condition_variable cv_task;
-    std::condition_variable cv_finished;
-    bool stop;
-    std::atomic<int> busy_threads; // Atomic counter for busy threads
-};
+#include <TROOT.h>
 
 Calibration::Calibration(const ChannelMap &map, std::vector<dec_ev_t> &events) : _map(map), _events(events)
 {
@@ -91,14 +27,22 @@ Calibration::Calibration(const ChannelMap &map, std::vector<dec_ev_t> &events) :
 
     _par.resize(_nGamma);
 
+
+    _timePeaksFinder = new TimePeaksFinder(_map);
+
     process();
+}
+
+Calibration::~Calibration()
+{
+    delete _timePeaksFinder;
 }
 
 void Calibration::process()
 {
 //    processTimeStamp();
     processTime();
-//    processGammaCh();
+    processGammaCh();
 //    processGammaEnergy();
 }
 
@@ -170,100 +114,6 @@ void Calibration::fillHistEnergy(const std::vector<dec_ev_t> &events, TH1 *h, do
     }
 }
 
-void Calibration::calculateTimePeaksPos(std::vector<std::vector<TH1 *> > &hists)
-{
-    gErrorIgnoreLevel = 3'000;
-    for (size_t ig{0}; ig < hists.size(); ++ig)
-    {
-        for (size_t ia{0}; ia <  hists.at(ig).size(); ++ia)
-        {
-            _timePeaksPos.at(ig).at(ia) = calculateTimePeakPos(hists.at(ig).at(ia));
-            if (ig == 0 && ia == 0)
-            {
-                std::cout << _timePeaksPos.at(ig).at(ia) << std::endl;
-            }
-        }
-    }
-    gErrorIgnoreLevel = 0;
-}
-
-double Calibration::calculateTimePeakPos(TH1 *hist) const
-{
-    hist->Rebin();
-    auto timePeakPos{0.0};
-
-    auto binMax{hist->GetMaximumBin()};
-    auto xMax{hist->GetBinCenter(hist->GetBin(binMax))};
-    auto rcAmp{hist->GetBinContent(hist->GetXaxis()->FindBin(xMax - 25.0))};
-    auto obPeakAmp{hist->GetBinContent(binMax) - rcAmp};
-    auto snPeakAmp{0.5 * obPeakAmp};
-    TF1 *f{new TF1("f", _timePeakFitFunctionObject, xMax - 15.0, xMax + 25.0, 11)};
-
-    f->SetParameter(0, obPeakAmp);
-    f->SetParameter(1, xMax);
-    f->SetParameter(2, 0.5 * ( 1.5 + 3.0 ));
-    f->SetParameter(6, 0.05 * obPeakAmp);
-    f->SetParameter(7, -10.0);
-    f->SetParameter(8, 2.5);
-    f->SetParameter(9, rcAmp);
-    f->FixParameter(10, 0.0);
-
-    f->SetParLimits(1, 0.9 * xMax, 1.1 * xMax);
-    f->SetParLimits(2, 1.5, 3.0);
-    f->SetParLimits(3, 0.0, snPeakAmp);
-    f->SetParLimits(4, 5.0, 20.0);
-    f->SetParLimits(5, 2.0, 7.0);
-    f->SetParLimits(6, 0.0, 0.25 * obPeakAmp);
-    f->SetParLimits(7, -15.0, -7.5);
-    f->SetParLimits(8, 2.25, 2.75);
-
-    hist->GetXaxis()->SetRangeUser(f->GetParameter(1) - 40.0, f->GetParameter(1) + 25.0);
-
-    hist->Fit(f, "RQ");
-
-    auto ff = [](double *x, double *par){
-        double arg{0};
-        if (par[2] != 0.0)
-        {
-            arg = ( x[0] - par[1] ) / par[2];
-        }
-        double fitval{par[0] * TMath::Exp(-0.5 * arg * arg) + par[3] + par[4] * x[0]};
-        return fitval;
-    };
-
-    TF1 *fOb{new TF1("fOb", ff, xMax - 15.0, xMax + 25.0, 5)};
-    fOb->SetParameters(f->GetParameter(0),
-                       f->GetParameter(1),
-                       f->GetParameter(2),
-                       f->GetParameter(9),
-                       f->GetParameter(10));
-    fOb->SetLineColor(kGreen);
-    TF1 *fB{new TF1("fB", ff, xMax - 15.0, xMax + 25.0, 5)};
-    fB->SetParameters(f->GetParameter(6),
-                       f->GetParameter(1) + f->GetParameter(7),
-                       f->GetParameter(8),
-                       f->GetParameter(9),
-                       f->GetParameter(10));
-    fB->SetLineColor(kMagenta);
-    TF1 *fSn{new TF1("fSn", ff, xMax - 15.0, xMax + 25.0, 5)};
-    fSn->SetParameters(f->GetParameter(3),
-                       f->GetParameter(1) + f->GetParameter(4),
-                       f->GetParameter(5),
-                       f->GetParameter(9),
-                       f->GetParameter(10));
-    fSn->SetLineColor(kBlue);
-
-    hist->GetListOfFunctions()->Add(fOb);
-    hist->GetListOfFunctions()->Add(fB);
-    hist->GetListOfFunctions()->Add(fSn);
-
-    timePeakPos = f->GetParameter(1);
-
-    delete f;
-    f = nullptr;
-
-    return timePeakPos;
-}
 
 void Calibration::drawHistsToFile(const std::string &psName, const std::vector<std::vector<TH1 *> > &hists) const
 {
@@ -377,48 +227,25 @@ void Calibration::processTime()
 
     auto start = std::chrono::steady_clock::now();
 
-    std::vector<std::future<void>> futures;
+    std::vector<std::function<void()>> tasks;
     for (size_t i{0}; i < hists.size(); ++i)
     {
         for (size_t j{0}; j <  hists.at(i).size(); ++j)
         {
-            futures.emplace_back(std::async(std::launch::async, [this] (u_int8_t g, u_int8_t a, TH1 *h) {
-                auto sE{selectedEvents(g, a)};
-                fillHistTime(sE, h, 0.0);
-            }, i, j, hists.at(i).at(j)));
+            tasks.push_back([this, &hists, i, j](){
+                auto sE{selectedEvents(static_cast<u_int8_t>(i), static_cast<u_int8_t>(j))};
+                fillHistTime(sE, hists.at(i).at(j), 0.0);
+            });
         }
     }
 
-    for (size_t i{0}; i < futures.size(); ++i)
-    {
-        futures.at(i).wait();
-    }
-
-    futures.clear();
+    fill_hist_async(tasks.begin(), tasks.end());
 
     auto stop = std::chrono::steady_clock::now();
     std::cout << "Time elapsed, ms: " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << std::endl;
 
 
-//    std::vector<std::future<void>> futures;
-//    for (size_t i{0}; i < hists.size(); ++i)
-//    {
-//        futures.emplace_back(std::async(std::launch::async, [this] (u_int8_t g, std::vector<TH1 *> hists) {
-//            for (size_t a{0}; a < hists.size(); ++a)
-//            {
-//                auto sE{selectedEvents(g, static_cast<u_int8_t>(a))};
-//                fillHistTime(sE, hists.at(a), 0.0);
-//            }
-//        }, i, hists.at(i)));
-//    }
-
-//    for (size_t i{0}; i < futures.size(); ++i)
-//    {
-//        futures.at(i).get();
-//    }
-
-
-
+    _timePeaksFinder->calculatePeaksPos(hists);
 //    calculateTimePeaksPos(hists);
 
     const std::string psName{"time.ps"};
@@ -442,30 +269,50 @@ void Calibration::processGammaCh()
     prepareHists("histBg", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, histsBg);
     prepareHists("histRc", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, histsRc);
 
-    std::vector<std::future<void>> futures;
+    std::vector<std::function<void()>> tasks;
     for (size_t i{0}; i < histsSg.size(); ++i)
     {
         for (size_t j{0}; j <  histsSg.at(i).size(); ++j)
         {
-            futures.emplace_back(std::async(std::launch::async, [this] (uint8_t g, uint8_t a, TH1 *hSg, TH1 *hBg, TH1 *hRc) {
-                auto sE{selectedEvents(g, a)};
-                auto tSgMin{_timePeaksPos.at(g).at(a) - 3.0};
-                auto tSgMax{_timePeaksPos.at(g).at(a) + 3.0};
-                fillHistChannel(sE, hSg, tSgMin, tSgMax, false);
-                fillHistChannel(sE, hRc, tSgMin - 1.0, tSgMax + 1.0, true);
-                auto tBgMin{_timePeaksPos.at(g).at(a) - 30.0};
-                auto tBgMax{_timePeaksPos.at(g).at(a) - 20.0};
-                fillHistChannel(sE, hBg, tBgMin, tBgMax, false);
-            }, i, j, histsSg.at(i).at(j), histsBg.at(i).at(j), histsRc.at(i).at(j)));
+            tasks.push_back([this, i, j, &histsSg, &histsBg, &histsRc] () {
+                auto sE{selectedEvents(static_cast<u_int8_t>(i), static_cast<u_int8_t>(j))};
+                auto tSgMin{_timePeaksPos.at(i).at(j) - 3.0};
+                auto tSgMax{_timePeaksPos.at(i).at(j) + 3.0};
+                fillHistChannel(sE, histsSg.at(i).at(j), tSgMin, tSgMax, false);
+                fillHistChannel(sE, histsRc.at(i).at(j), tSgMin - 1.0, tSgMax + 1.0, true);
+                auto tBgMin{_timePeaksPos.at(i).at(j) - 30.0};
+                auto tBgMax{_timePeaksPos.at(i).at(j) - 20.0};
+                fillHistChannel(sE, histsBg.at(i).at(j), tBgMin, tBgMax, false);
+            });
         }
     }
 
-    for (size_t i{0}; i < futures.size(); ++i)
-    {
-        futures[i].get();
-    }
+    fill_hist_async(tasks.begin(), tasks.end());
 
-    futures.clear();
+//    std::vector<std::future<void>> futures;
+//    for (size_t i{0}; i < histsSg.size(); ++i)
+//    {
+//        for (size_t j{0}; j <  histsSg.at(i).size(); ++j)
+//        {
+//            futures.emplace_back(std::async(std::launch::async, [this] (uint8_t g, uint8_t a, TH1 *hSg, TH1 *hBg, TH1 *hRc) {
+//                auto sE{selectedEvents(g, a)};
+//                auto tSgMin{_timePeaksPos.at(g).at(a) - 3.0};
+//                auto tSgMax{_timePeaksPos.at(g).at(a) + 3.0};
+//                fillHistChannel(sE, hSg, tSgMin, tSgMax, false);
+//                fillHistChannel(sE, hRc, tSgMin - 1.0, tSgMax + 1.0, true);
+//                auto tBgMin{_timePeaksPos.at(g).at(a) - 30.0};
+//                auto tBgMax{_timePeaksPos.at(g).at(a) - 20.0};
+//                fillHistChannel(sE, hBg, tBgMin, tBgMax, false);
+//            }, i, j, histsSg.at(i).at(j), histsBg.at(i).at(j), histsRc.at(i).at(j)));
+//        }
+//    }
+
+//    for (size_t i{0}; i < futures.size(); ++i)
+//    {
+//        futures[i].get();
+//    }
+
+//    futures.clear();
 
     std::vector<TH1 *> histsSgGamma(_nGamma, nullptr);
     prepareHists("histSgGamma", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, histsSgGamma);
@@ -498,17 +345,17 @@ void Calibration::processGammaCh()
     deleteHists(histsBg);
     deleteHists(histsRc);
 
-    PeakFinder peakFinder;
-    peakFinder.process(histsSgGamma, histsRcGamma);
+//    PeakFinder peakFinder;
+//    peakFinder.process(histsSgGamma, histsRcGamma);
 
-    auto p{peakFinder.getPar()};
-    for (size_t i{0}; i < p.size(); ++i)
-    {
-        for (size_t j{0}; j < p.at(i).size(); ++j)
-        {
-            _par.at(i).push_back(p.at(i).at(j));
-        }
-    }
+//    auto p{peakFinder.getPar()};
+//    for (size_t i{0}; i < p.size(); ++i)
+//    {
+//        for (size_t j{0}; j < p.at(i).size(); ++j)
+//        {
+//            _par.at(i).push_back(p.at(i).at(j));
+//        }
+//    }
 
     clearHists(histsSgGamma);
     clearHists(histsRcGamma);

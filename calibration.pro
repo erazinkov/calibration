@@ -12,7 +12,8 @@ SOURCES += \
         channelmap.cpp \
         decoder.cpp \
         main.cpp \
-        peakfinder.cpp
+        peakfinder.cpp \
+        timepeaksfinder.cpp
 
 
 INCLUDEPATH += $$system(root-config --incdir)
@@ -30,4 +31,5 @@ HEADERS += \
     decoder.h \
     peakfinder.h \
     progressbar.h \
-    spinner.h
+    spinner.h \
+    timepeaksfinder.h

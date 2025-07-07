@@ -9,10 +9,13 @@
 #include "adcm_df.h"
 #include "channelmap.h"
 
+#include "timepeaksfinder.h"
+
 class Calibration
 {
 public:
     Calibration(const ChannelMap &map, std::vector<dec_ev_t> &events);
+    ~Calibration();
     void process();
 
     static inline constexpr int BINS_TIME{400};
@@ -28,7 +31,7 @@ public:
     static inline constexpr double XUP_ENERGY{8.0e3};
 
 private:
-
+    TimePeaksFinder *_timePeaksFinder;
     const ChannelMap _map;
     const std::vector<dec_ev_t> _events;
 
@@ -64,35 +67,6 @@ private:
     unsigned long _nGamma;
     unsigned long _nAlpha;
 
-    void calculateTimePeaksPos(std::vector<std::vector<TH1 *> > &hists);
-    double calculateTimePeakPos(TH1 *hist) const;
-
-    class TimePeakFitFunctionObject
-    {
-    public:
-        TimePeakFitFunctionObject(){}
-
-        double operator() (double *x, double *par) {
-           double arg_1{0.0}, arg_2{0.0}, arg_3{0.0}, arg_4{0.0};
-           if (par[2] != 0.0 && par[5] != 0.0 && par[8] != 0.0)
-           {
-               arg_1 = ( x[0] - par[1] ) / par[2];
-               arg_2 = ( x[0] - ( par[1] + par[4] ) ) / par[5];
-               arg_3 = ( x[0] - ( par[1] + par[7] ) ) / par[8];
-               arg_4 = x[0];
-           }
-
-           double fitval{
-               par[0] * TMath::Exp( -0.5 * arg_1 * arg_1 ) +
-               par[3] * TMath::Exp( -0.5 * arg_2 * arg_2 ) +
-               par[6] * TMath::Exp( -0.5 * arg_3 * arg_3 ) +
-               par[9] + par[10] * arg_4
-           };
-
-           return fitval;
-       }
-    };
-    TimePeakFitFunctionObject _timePeakFitFunctionObject;
     class AmpPeakFitFunctionObject
     {
     public:
@@ -109,6 +83,49 @@ private:
        }
     };
     AmpPeakFitFunctionObject _ampPeakFitFunctionObject;
+
+    template<typename  Iterator>
+    struct fill_hist_block
+    {
+        void operator()(Iterator first, Iterator last)
+        {
+            for (auto it{first}; it != last; ++it)
+            {
+                (*it)();
+            }
+        }
+    };
+
+    template<typename Iterator>
+    void fill_hist_async(Iterator first, Iterator last)
+    {
+        unsigned long const length{static_cast<unsigned long const>(std::distance(first, last))};
+        if (!length)
+        {
+            return;
+        }
+        unsigned long const min_per_thread{10};
+        unsigned long const max_threads{(length + min_per_thread - 1) / min_per_thread};
+        unsigned long const hardware_threads{std::thread::hardware_concurrency()};
+        unsigned long const num_threads{std::min(hardware_threads != 0 ? hardware_threads : 2, max_threads)};
+        unsigned long const block_size{length / num_threads};
+        std::vector<std::thread> threads(num_threads - 1);
+        Iterator block_start{first};
+        for(unsigned long i{0}; i < (num_threads - 1); ++i)
+        {
+            Iterator block_end{block_start};
+            std::advance(block_end,block_size);
+            threads.at(i) = std::thread(fill_hist_block<Iterator>(), block_start, block_end);
+            block_start = block_end;
+        }
+
+        fill_hist_block<Iterator>()(block_start, last);
+
+        for(auto& entry: threads) {
+            entry.join();
+        }
+    }
+
 };
 
 #endif // CALIBRATION_H

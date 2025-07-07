@@ -5,7 +5,7 @@
 #include <TCanvas.h>
 #include <TVirtualFitter.h>
 
-PeakFinder::PeakFinder() : _calib{1.0}, _offset{0.0}
+PeakFinder::PeakFinder(const ChannelMap &map) : _calib{1.0}, _offset{0.0}
 {
 
 }
@@ -32,28 +32,28 @@ void PeakFinder::process(std::vector<TH1 *> &histsSg, std::vector<TH1 *> &histsR
         _calib  = (847.0 - _offset) / fe847Pos;
         auto fe1238Pos{getFerrum1238Pos(histsRc.at(i))};
 
-//        graphPolN.SetPoint(1, fe1238Pos, 1238.0);
-//        _calib  = (1238.0 - _offset) / fe1238Pos;
-//        auto hydPos{getHydrogenPos(histsRc.at(i))};
+        graphPolN.SetPoint(1, fe1238Pos, 1238.0);
+        _calib  = (1238.0 - _offset) / fe1238Pos;
+        auto hydPos{getHydrogenPos(histsRc.at(i))};
 
-//        graphPolN.SetPoint(2, hydPos, 2223.0);
-//        _calib  = (2223.0 - _offset) / hydPos;
+        graphPolN.SetPoint(2, hydPos, 2223.0);
+        _calib  = (2223.0 - _offset) / hydPos;
 
-//        TF1 fApp("fApp", "pol2", 0.0, 8.0e3);
-//        graphPolN.Fit(&fApp, "RQ0");
-//        auto carbonPos{getCarbonPos(histsSg.at(i), fApp.GetX(4438.0) - 25)};
+        TF1 fApp("fApp", "pol2", 0.0, 8.0e3);
+        graphPolN.Fit(&fApp, "RQ0");
+        auto carbonPos{getCarbonPos(histsSg.at(i), fApp.GetX(4438.0) - 25)};
 
-//        graphPolN.SetPoint(3, carbonPos, 4438.0);
-//        _calib  = (4438.0 - _offset) / carbonPos;
-//        graphPolN.Fit(&fApp, "RQ0");
-//        auto oxygenPos{getOxygenPos(histsSg.at(i), fApp.GetX(6129.0))};
+        graphPolN.SetPoint(3, carbonPos, 4438.0);
+        _calib  = (4438.0 - _offset) / carbonPos;
+        graphPolN.Fit(&fApp, "RQ0");
+        auto oxygenPos{getOxygenPos(histsSg.at(i), fApp.GetX(6129.0))};
 
-//        graphPolN.SetPoint(4, oxygenPos, 6129.0);
-//        _calib  = (6129.0 - _offset) / oxygenPos;
-//        auto fe7631Pos{getFerrum7631Pos(histsRc.at(i), 0.0)};
-//        graphPolN.SetPoint(5, fe7631Pos, 7631.0);
-//        _f.at(i)->SetParameters(25.0, 2.5, 2.5 * 1e-4, -1.0 * 1e-8);
-//        graphPolN.Fit(_f.at(i), "RQ");
+        graphPolN.SetPoint(4, oxygenPos, 6129.0);
+        _calib  = (6129.0 - _offset) / oxygenPos;
+        auto fe7631Pos{getFerrum7631Pos(histsRc.at(i), 0.0)};
+        graphPolN.SetPoint(5, fe7631Pos, 7631.0);
+        _f.at(i)->SetParameters(25.0, 2.5, 2.5 * 1e-4, -1.0 * 1e-8);
+        graphPolN.Fit(_f.at(i), "RQ");
     }
 
     const std::string psName{"gamma_calib.ps"};
@@ -93,6 +93,14 @@ std::vector<std::vector<double> > PeakFinder::getPar()
         }
     }
     return par;
+}
+
+PeakFinder::~PeakFinder()
+{
+    for (auto &item : _f)
+    {
+        delete item;
+    }
 }
 
 double PeakFinder::getFerrum847PosApprox(TH1 *h, double r)
@@ -282,3 +290,4 @@ double PeakFinder::getFerrum7631Pos(TH1 *h, double appPos)
     h->Fit("f","RQ");
     return f.GetParameter(4);
 }
+

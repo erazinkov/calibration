@@ -5,14 +5,16 @@
 #include <TH1.h>
 #include <TF1.h>
 
+#include "channelmap.h"
+
 class PeakFinder
 {
 public:
-    PeakFinder();
+    PeakFinder(const ChannelMap &map);
     void process(std::vector<TH1 *> &histsSg, std::vector<TH1 *> &histsRc);
 
     std::vector<std::vector<double>> getPar();
-
+    ~PeakFinder();
 private:
     double _calib;
     double _offset;
