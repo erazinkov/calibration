@@ -28,21 +28,21 @@ Calibration::Calibration(const ChannelMap &map, std::vector<dec_ev_t> &events) :
     _par.resize(_nGamma);
 
 
-    _timePeaksFinder = new TimePeaksFinder(_map);
+    _timePeaksFinder = std::make_unique<TimePeaksFinder>(_map);
 
     process();
 }
 
 Calibration::~Calibration()
 {
-    delete _timePeaksFinder;
+
 }
 
 void Calibration::process()
 {
 //    processTimeStamp();
     processTime();
-    processGammaCh();
+//    processGammaCh();
 //    processGammaEnergy();
 }
 
@@ -114,7 +114,6 @@ void Calibration::fillHistEnergy(const std::vector<dec_ev_t> &events, TH1 *h, do
     }
 }
 
-
 void Calibration::drawHistsToFile(const std::string &psName, const std::vector<std::vector<TH1 *> > &hists) const
 {
     gErrorIgnoreLevel = 3'000;
@@ -170,6 +169,37 @@ void Calibration::prepareHists(const std::string &histName, int nBinsX, double x
     }
 }
 
+void Calibration::prepareHists(const std::string &histName, int nBinsX, double xLow, double xUp, std::vector<std::vector<std::shared_ptr<TH1>> > &hists)
+{
+    std::stringstream ss;
+    for (size_t i{0}; i < hists.size(); ++i)
+    {
+        for (size_t j{0}; j <  hists.at(i).size(); ++j)
+        {
+            ss.clear();ss.str("");
+            ss << histName << "_" << i << "_" << j;
+            auto h = std::make_shared<TH1D>(ss.str().c_str(), ss.str().c_str(), nBinsX, xLow, xUp);
+            h->Sumw2();
+            hists.at(i).at(j) = h;
+        }
+    }
+}
+
+void Calibration::prepareHists(const std::string &histName, int nBinsX, double xLow, double xUp, std::vector<std::shared_ptr<TH1>> &hists)
+{
+    std::stringstream ss;
+    for (size_t i{0}; i < hists.size(); ++i)
+    {
+        hists.at(i).reset();
+        ss.clear();ss.str("");
+        ss << histName << "_" << i;
+//        TH1 *h{new TH1D(ss.str().c_str(), ss.str().c_str(), nBinsX, xLow, xUp)};
+        auto h = std::make_shared<TH1D>(ss.str().c_str(), ss.str().c_str(), nBinsX, xLow, xUp);
+        h->Sumw2();
+        hists.at(i) = h;
+    }
+}
+
 void Calibration::clearHists(std::vector<std::vector<TH1 *> > &hists)
 {
     for (size_t i{0}; i < hists.size(); ++i)
@@ -217,6 +247,8 @@ void Calibration::processTimeStamp()
 
 void Calibration::processTime()
 {
+    std::unique_ptr<std::vector<std::vector<TH1>>> _hists;
+
     std::vector<std::vector<TH1 *>> hists(_nGamma);
     for (size_t i{0}; i < hists.size(); ++i)
     {
@@ -238,14 +270,14 @@ void Calibration::processTime()
             });
         }
     }
-
-    fill_hist_async(tasks.begin(), tasks.end());
+    func_async(tasks.begin(), tasks.end());
+    tasks.clear();
 
     auto stop = std::chrono::steady_clock::now();
     std::cout << "Time elapsed, ms: " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << std::endl;
 
 
-    _timePeaksFinder->calculatePeaksPos(hists);
+    _timePeaksFinder.get()->calculatePeaksPos(hists);
 //    calculateTimePeaksPos(hists);
 
     const std::string psName{"time.ps"};
@@ -287,32 +319,8 @@ void Calibration::processGammaCh()
         }
     }
 
-    fill_hist_async(tasks.begin(), tasks.end());
-
-//    std::vector<std::future<void>> futures;
-//    for (size_t i{0}; i < histsSg.size(); ++i)
-//    {
-//        for (size_t j{0}; j <  histsSg.at(i).size(); ++j)
-//        {
-//            futures.emplace_back(std::async(std::launch::async, [this] (uint8_t g, uint8_t a, TH1 *hSg, TH1 *hBg, TH1 *hRc) {
-//                auto sE{selectedEvents(g, a)};
-//                auto tSgMin{_timePeaksPos.at(g).at(a) - 3.0};
-//                auto tSgMax{_timePeaksPos.at(g).at(a) + 3.0};
-//                fillHistChannel(sE, hSg, tSgMin, tSgMax, false);
-//                fillHistChannel(sE, hRc, tSgMin - 1.0, tSgMax + 1.0, true);
-//                auto tBgMin{_timePeaksPos.at(g).at(a) - 30.0};
-//                auto tBgMax{_timePeaksPos.at(g).at(a) - 20.0};
-//                fillHistChannel(sE, hBg, tBgMin, tBgMax, false);
-//            }, i, j, histsSg.at(i).at(j), histsBg.at(i).at(j), histsRc.at(i).at(j)));
-//        }
-//    }
-
-//    for (size_t i{0}; i < futures.size(); ++i)
-//    {
-//        futures[i].get();
-//    }
-
-//    futures.clear();
+    func_async(tasks.begin(), tasks.end());
+    tasks.clear();
 
     std::vector<TH1 *> histsSgGamma(_nGamma, nullptr);
     prepareHists("histSgGamma", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, histsSgGamma);
@@ -381,31 +389,28 @@ void Calibration::processGammaEnergy()
     prepareHists("histSg", BINS_ENERGY, XLOW_ENERGY, XUP_ENERGY, histsSg);
     prepareHists("histBg", BINS_ENERGY, XLOW_ENERGY, XUP_ENERGY, histsBg);
 
-    std::vector<std::future<void>> futures;
+    std::vector<std::function<void()>> tasks;
     for (size_t i{0}; i < histsSg.size(); ++i)
     {
         for (size_t j{0}; j <  histsSg.at(i).size(); ++j)
         {
-            futures.emplace_back(std::async(std::launch::async, [this] (uint8_t g, uint8_t a, TH1 *hSg, TH1 *hBg) {
-                auto sE{selectedEvents(g, a)};
-                auto tSgMin{_timePeaksPos.at(g).at(a) - 3.0};
-                auto tSgMax{_timePeaksPos.at(g).at(a) + 3.0};
+            tasks.push_back([this, i, j, &histsSg, &histsBg] () {
+                auto sE{selectedEvents(static_cast<u_int8_t>(i), static_cast<u_int8_t>(j))};
+                auto tSgMin{_timePeaksPos.at(i).at(j) - 3.0};
+                auto tSgMax{_timePeaksPos.at(i).at(j) + 3.0};
                 TF1 f("f", "pol3", XLOW_ENERGY, XUP_ENERGY);
-                f.SetParameters(&_par.at(g).at(0));
-                fillHistEnergy(sE, hSg, tSgMin, tSgMax, false, f);
-                auto tBgMin{_timePeaksPos.at(g).at(a) - 30.0};
-                auto tBgMax{_timePeaksPos.at(g).at(a) - 20.0};
-                fillHistEnergy(sE, hBg, tBgMin, tBgMax, false, f);
-            }, i, j, histsSg.at(i).at(j), histsBg.at(i).at(j)));
+                fillHistEnergy(sE, histsSg.at(i).at(j), tSgMin, tSgMax, false, f);
+                fillHistChannel(sE, histsSg.at(i).at(j), tSgMin, tSgMax, false);
+                auto tBgMin{_timePeaksPos.at(i).at(j) - 30.0};
+                auto tBgMax{_timePeaksPos.at(i).at(j) - 20.0};
+                fillHistEnergy(sE, histsBg.at(i).at(j), tBgMin, tBgMax, false, f);
+            });
         }
     }
 
-    for (size_t i{0}; i < futures.size(); ++i)
-    {
-        futures[i].get();
-    }
+    func_async(tasks.begin(), tasks.end());
 
-    futures.clear();
+    tasks.clear();
 
     std::vector<TH1 *> histsSgGamma(_nGamma, nullptr);
     prepareHists("histSgGamma", BINS_ENERGY, XLOW_ENERGY, XUP_ENERGY, histsSgGamma);

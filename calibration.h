@@ -31,7 +31,7 @@ public:
     static inline constexpr double XUP_ENERGY{8.0e3};
 
 private:
-    TimePeaksFinder *_timePeaksFinder;
+    std::unique_ptr<TimePeaksFinder> _timePeaksFinder;
     const ChannelMap _map;
     const std::vector<dec_ev_t> _events;
 
@@ -46,12 +46,22 @@ private:
                       int nBinsX,
                       double xLow,
                       double xUp,
+                      std::vector<std::vector<std::shared_ptr<TH1>>> &hists);
+    void prepareHists(const std::string &histName,
+                      int nBinsX,
+                      double xLow,
+                      double xUp,
                       std::vector<std::vector<TH1 *>> &hists);
     void prepareHists(const std::string &histName,
                       int nBinsX,
                       double xLow,
                       double xUp,
                       std::vector<TH1 *> &hists);
+    void prepareHists(const std::string &histName,
+                      int nBinsX,
+                      double xLow,
+                      double xUp,
+                      std::vector<std::shared_ptr<TH1>> &hists);
     void clearHists(std::vector<std::vector<TH1 *>> &hists);
     void clearHists(std::vector<TH1 *> &hists);
     void deleteHists(std::vector<std::vector<TH1 *>> &hists);
@@ -84,48 +94,27 @@ private:
     };
     AmpPeakFitFunctionObject _ampPeakFitFunctionObject;
 
-    template<typename  Iterator>
-    struct fill_hist_block
+    template<typename Iterator>
+    static void func_async(Iterator first, Iterator last)
     {
-        void operator()(Iterator first, Iterator last)
+        unsigned long const length{static_cast<unsigned long const>(std::distance(first, last))};
+        unsigned long const max_chunk_size{8};
+        if (length < max_chunk_size)
         {
             for (auto it{first}; it != last; ++it)
             {
                 (*it)();
             }
         }
-    };
-
-    template<typename Iterator>
-    void fill_hist_async(Iterator first, Iterator last)
-    {
-        unsigned long const length{static_cast<unsigned long const>(std::distance(first, last))};
-        if (!length)
+        else
         {
-            return;
-        }
-        unsigned long const min_per_thread{10};
-        unsigned long const max_threads{(length + min_per_thread - 1) / min_per_thread};
-        unsigned long const hardware_threads{std::thread::hardware_concurrency()};
-        unsigned long const num_threads{std::min(hardware_threads != 0 ? hardware_threads : 2, max_threads)};
-        unsigned long const block_size{length / num_threads};
-        std::vector<std::thread> threads(num_threads - 1);
-        Iterator block_start{first};
-        for(unsigned long i{0}; i < (num_threads - 1); ++i)
-        {
-            Iterator block_end{block_start};
-            std::advance(block_end,block_size);
-            threads.at(i) = std::thread(fill_hist_block<Iterator>(), block_start, block_end);
-            block_start = block_end;
-        }
-
-        fill_hist_block<Iterator>()(block_start, last);
-
-        for(auto& entry: threads) {
-            entry.join();
+            Iterator mid_point{first};
+            std::advance(mid_point, length / 2);
+            std::future<void> first_half = std::async(func_async<Iterator>, first, mid_point);
+            func_async(mid_point, last);
+            first_half.get();
         }
     }
-
 };
 
 #endif // CALIBRATION_H

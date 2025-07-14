@@ -22,14 +22,14 @@ public:
         f();
         stop = true;
         spinner_thread.join();
-        std::cout << "\b";
+        std::cout << "\r";
         std::cout << std::flush;
     }
     static void show()
     {
         static size_t i{0};
         std::vector<char> chars{'/', '-', '\\', '|'};
-        std::cout << "\b" << chars.at(i);
+        std::cout << "\r" << chars.at(i);
         std::cout << std::flush;
         i = (i + 1) % chars.size();
     }
