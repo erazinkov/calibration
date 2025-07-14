@@ -13,6 +13,7 @@ public:
     TimePeaksFinder(const ChannelMap &map);
 
     void calculatePeaksPos(std::vector<std::vector<TH1 *>> hists);
+    void calculatePeaksPos(std::vector<std::vector<std::shared_ptr<TH1>> > &hists);
     const std::vector<std::vector<double> > &timePeaksPos() const;
 
 private:

@@ -56,7 +56,6 @@ void Decoder::process()
     while (ifs_)
     {
         ifs_ >> hdr;
-
         if (hdr.id == STOR_ID_CMAP && hdr.size > sizeof(stor_packet_hdr_t))
         {
             currentPosition = static_cast<u_int32_t>(ifs_.tellg());

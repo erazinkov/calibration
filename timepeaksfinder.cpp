@@ -17,6 +17,19 @@ const std::vector<std::vector<double> > &TimePeaksFinder::timePeaksPos() const
     return _timePeaksPos;
 }
 
+void TimePeaksFinder::calculatePeaksPos(std::vector<std::vector<std::shared_ptr<TH1>> > &hists)
+{
+    gErrorIgnoreLevel = 3'000;
+    for (size_t ig{0}; ig < hists.size(); ++ig)
+    {
+        for (size_t ia{0}; ia <  hists.at(ig).size(); ++ia)
+        {
+            _timePeaksPos.at(ig).at(ia) = calculatePeakPos(hists.at(ig).at(ia).get());
+        }
+    }
+    gErrorIgnoreLevel = 0;
+}
+
 void TimePeaksFinder::calculatePeaksPos(std::vector<std::vector<TH1 *> > hists)
 {
     gErrorIgnoreLevel = 3'000;

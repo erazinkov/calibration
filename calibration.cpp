@@ -114,6 +114,32 @@ void Calibration::fillHistEnergy(const std::vector<dec_ev_t> &events, TH1 *h, do
     }
 }
 
+void Calibration::drawHistsToFile(const std::string &psName, const std::vector<std::vector<std::shared_ptr<TH1>> > &hists) const
+{
+    gErrorIgnoreLevel = 3'000;
+    std::unique_ptr<TCanvas> c{new TCanvas("c", "c", 1024, 960)};
+    c->Print((psName + '[').c_str());
+    for (size_t ig{0}; ig < hists.size(); ++ig)
+    {
+        auto cd{static_cast<int>(std::ceil(std::sqrt(hists.at(ig).size())))};
+        c->Divide(cd, cd);
+        for (size_t ia{0}; ia <  hists.at(ig).size(); ++ia)
+        {
+            c->cd(static_cast<int>(ia) + 1);
+            hists.at(ig).at(ia)->Draw();
+            auto listOfFunctions{hists.at(ig).at(ia)->GetListOfFunctions()};
+            for (auto *item : *listOfFunctions)
+            {
+                item->Draw("SAME");
+            }
+        }
+        c->Print(psName.c_str());
+        c->Clear();
+    }
+    c->Print((psName + ']').c_str());
+    gErrorIgnoreLevel = 0;
+}
+
 void Calibration::drawHistsToFile(const std::string &psName, const std::vector<std::vector<TH1 *> > &hists) const
 {
     gErrorIgnoreLevel = 3'000;
@@ -139,6 +165,7 @@ void Calibration::drawHistsToFile(const std::string &psName, const std::vector<s
     c->Print((psName + ']').c_str());
     gErrorIgnoreLevel = 0;
 }
+
 
 void Calibration::prepareHists(const std::string &histName, int nBinsX, double xLow, double xUp, std::vector<std::vector<TH1 *> > &hists)
 {
@@ -176,6 +203,7 @@ void Calibration::prepareHists(const std::string &histName, int nBinsX, double x
     {
         for (size_t j{0}; j <  hists.at(i).size(); ++j)
         {
+            hists.at(i).at(j).reset();
             ss.clear();ss.str("");
             ss << histName << "_" << i << "_" << j;
             auto h = std::make_shared<TH1D>(ss.str().c_str(), ss.str().c_str(), nBinsX, xLow, xUp);
@@ -193,7 +221,6 @@ void Calibration::prepareHists(const std::string &histName, int nBinsX, double x
         hists.at(i).reset();
         ss.clear();ss.str("");
         ss << histName << "_" << i;
-//        TH1 *h{new TH1D(ss.str().c_str(), ss.str().c_str(), nBinsX, xLow, xUp)};
         auto h = std::make_shared<TH1D>(ss.str().c_str(), ss.str().c_str(), nBinsX, xLow, xUp);
         h->Sumw2();
         hists.at(i) = h;
@@ -247,26 +274,25 @@ void Calibration::processTimeStamp()
 
 void Calibration::processTime()
 {
-    std::unique_ptr<std::vector<std::vector<TH1>>> _hists;
+    std::vector<std::vector<std::shared_ptr<TH1>>> _hists(_nGamma);
 
-    std::vector<std::vector<TH1 *>> hists(_nGamma);
-    for (size_t i{0}; i < hists.size(); ++i)
+    for (size_t i{0}; i < _hists.size(); ++i)
     {
-        hists.at(i).resize(_nAlpha, nullptr);
+        _hists.at(i).resize(_nAlpha, nullptr);
     }
 
-    prepareHists("histTime", BINS_TIME, XLOW_TIME, XUP_TIME, hists);
+    prepareHists("histTime", BINS_TIME, XLOW_TIME, XUP_TIME, _hists);
 
     auto start = std::chrono::steady_clock::now();
 
     std::vector<std::function<void()>> tasks;
-    for (size_t i{0}; i < hists.size(); ++i)
+    for (size_t i{0}; i < _hists.size(); ++i)
     {
-        for (size_t j{0}; j <  hists.at(i).size(); ++j)
+        for (size_t j{0}; j <  _hists.at(i).size(); ++j)
         {
-            tasks.push_back([this, &hists, i, j](){
+            tasks.push_back([this, &_hists, i, j](){
                 auto sE{selectedEvents(static_cast<u_int8_t>(i), static_cast<u_int8_t>(j))};
-                fillHistTime(sE, hists.at(i).at(j), 0.0);
+                fillHistTime(sE, _hists.at(i).at(j).get(), 0.0);
             });
         }
     }
@@ -277,13 +303,13 @@ void Calibration::processTime()
     std::cout << "Time elapsed, ms: " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << std::endl;
 
 
-    _timePeaksFinder.get()->calculatePeaksPos(hists);
+    _timePeaksFinder.get()->calculatePeaksPos(_hists);
 //    calculateTimePeaksPos(hists);
 
     const std::string psName{"time.ps"};
-    drawHistsToFile(psName, hists);
-    clearHists(hists);
-    deleteHists(hists);
+    drawHistsToFile(psName, _hists);
+//    clearHists(hists);
+//    deleteHists(hists);
 }
 
 void Calibration::processGammaCh()
