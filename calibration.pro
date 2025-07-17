@@ -11,8 +11,11 @@ SOURCES += \
         calibration.cpp \
         channelmap.cpp \
         decoder.cpp \
+        energypeak.cpp \
         main.cpp \
         peakfinder.cpp \
+        piecewiselinearfunction.cpp \
+        polynomialfunction.cpp \
         timepeaksfinder.cpp
 
 
@@ -29,7 +32,10 @@ HEADERS += \
     calibration.h \
     channelmap.h \
     decoder.h \
+    energypeak.h \
     peakfinder.h \
+    piecewiselinearfunction.h \
+    polynomialfunction.h \
     progressbar.h \
     spinner.h \
     timepeaksfinder.h

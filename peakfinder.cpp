@@ -7,60 +7,53 @@
 
 PeakFinder::PeakFinder(const ChannelMap &map) : _calib{1.0}, _offset{0.0}
 {
-
+    _energyPeaks.resize(map.numberOfChannelsGamma());
 }
 
-void PeakFinder::process(std::vector<TH1 *> &histsSg, std::vector<TH1 *> &histsRc)
+void PeakFinder::process(std::vector<std::shared_ptr<TH1>> &histsSg, std::vector<std::shared_ptr<TH1>> &histsRc)
 {
     TVirtualFitter::SetDefaultFitter("Minuit");
 
-    auto n{histsSg.size()};
-
-    _f.resize(n, nullptr);
-
-    for (size_t i{0}; i < n; ++i)
+    for (size_t i{0}; i < _energyPeaks.size(); ++i)
     {
-        _f.at(i) = new TF1(("fN_" + std::to_string(i)).c_str(), "pol3", 0.0, 8.0e3);
         TGraphErrors graphPolN(5);
-        auto fe847PosApprox{getFerrum847PosApprox(histsRc.at(i), 0.12)};
+        auto fe847PosApprox{getFerrum847PosApprox(histsRc.at(i).get(), 0.12)};
 
         _offset = 0.0;
         _calib = (847.0 - _offset) / fe847PosApprox;
-        auto fe847Pos{getFerrum847Pos(histsRc.at(i))};
-
+        auto fe847Pos{getFerrum847Pos(histsRc.at(i).get())};
+        _energyPeaks.at(i).push_back(EnergyPeak(EnergyPeak::Id::FE847, fe847Pos));
         graphPolN.SetPoint(0, fe847Pos, 847.0);
         _calib  = (847.0 - _offset) / fe847Pos;
-        auto fe1238Pos{getFerrum1238Pos(histsRc.at(i))};
-
+        auto fe1238Pos{getFerrum1238Pos(histsRc.at(i).get())};
+        _energyPeaks.at(i).push_back(EnergyPeak(EnergyPeak::Id::FE1238, fe1238Pos));
         graphPolN.SetPoint(1, fe1238Pos, 1238.0);
         _calib  = (1238.0 - _offset) / fe1238Pos;
-        auto hydPos{getHydrogenPos(histsRc.at(i))};
-
+        auto hydPos{getHydrogenPos(histsRc.at(i).get())};
+        _energyPeaks.at(i).push_back(EnergyPeak(EnergyPeak::Id::HYDROGEN, hydPos));
         graphPolN.SetPoint(2, hydPos, 2223.0);
         _calib  = (2223.0 - _offset) / hydPos;
 
         TF1 fApp("fApp", "pol2", 0.0, 8.0e3);
         graphPolN.Fit(&fApp, "RQ0");
-        auto carbonPos{getCarbonPos(histsSg.at(i), fApp.GetX(4438.0) - 25)};
-
+        auto carbonPos{getCarbonPos(histsSg.at(i).get(), fApp.GetX(4438.0) - 25)};
+        _energyPeaks.at(i).push_back(EnergyPeak(EnergyPeak::Id::CARBON, carbonPos));
         graphPolN.SetPoint(3, carbonPos, 4438.0);
         _calib  = (4438.0 - _offset) / carbonPos;
         graphPolN.Fit(&fApp, "RQ0");
-        auto oxygenPos{getOxygenPos(histsSg.at(i), fApp.GetX(6129.0))};
-
+        auto oxygenPos{getOxygenPos(histsSg.at(i).get(), fApp.GetX(6129.0))};
+        _energyPeaks.at(i).push_back(EnergyPeak(EnergyPeak::Id::OXYGEN, oxygenPos));
         graphPolN.SetPoint(4, oxygenPos, 6129.0);
         _calib  = (6129.0 - _offset) / oxygenPos;
-        auto fe7631Pos{getFerrum7631Pos(histsRc.at(i), 0.0)};
-        graphPolN.SetPoint(5, fe7631Pos, 7631.0);
-        _f.at(i)->SetParameters(25.0, 2.5, 2.5 * 1e-4, -1.0 * 1e-8);
-        graphPolN.Fit(_f.at(i), "RQ");
+        auto fe7631Pos{getFerrum7631Pos(histsRc.at(i).get(), 0.0)};
+        _energyPeaks.at(i).push_back(EnergyPeak(EnergyPeak::Id::FE7631, fe7631Pos));
     }
 
     const std::string psName{"gamma_calib.ps"};
     std::unique_ptr<TCanvas> c{new TCanvas("c", "c", 900, 700)};
     c.get()->Divide(1, 2);
     c.get()->Print((psName + '[').c_str());
-    for (size_t i{0}; i < n; ++i)
+    for (size_t i{0}; i < _energyPeaks.size(); ++i)
     {
         c.get()->cd(1);
         histsSg.at(i)->Draw();
@@ -79,28 +72,6 @@ void PeakFinder::process(std::vector<TH1 *> &histsSg, std::vector<TH1 *> &histsR
         c.get()->Print(psName.c_str());
     }
     c.get()->Print((psName + ']').c_str());
-}
-
-std::vector<std::vector<double> > PeakFinder::getPar()
-{
-    std::vector<std::vector<double>> par;
-    par.resize(_f.size());
-    for (size_t i{0}; i < _f.size(); ++i)
-    {
-        for (auto ip{0}; ip < _f.at(i)->GetNpar(); ++ip)
-        {
-            par.at(i).push_back(_f.at(i)->GetParameter(ip));
-        }
-    }
-    return par;
-}
-
-PeakFinder::~PeakFinder()
-{
-    for (auto &item : _f)
-    {
-        delete item;
-    }
 }
 
 double PeakFinder::getFerrum847PosApprox(TH1 *h, double r)
@@ -156,8 +127,12 @@ double PeakFinder::getFerrum847Pos(TH1 *h)
     f->SetParLimits(1,getCh(800),getCh(900));
     f->SetParLimits(2,getdCh(20.),getdCh(60.));
     f->SetParLimits(4,p1,0);
-    h->Fit(f,"RQN");
+    h->Fit(f,"RQN0");
+    TF1 *fBg{new TF1("f","pol1(0)", getCh(feLow-dfeLow), getCh(feLow+dfeHigh))};
+    fBg->SetLineColor(kGreen);
+    fBg->SetParameters(f->GetParameters() + 3);
     h->GetListOfFunctions()->Add(f);
+    h->GetListOfFunctions()->Add(fBg);
     return f->GetParameter(1);
 }
 
@@ -169,10 +144,23 @@ double PeakFinder::getFerrum1238Pos(TH1 *h)
     f->SetParLimits(0,0,1.0e5);
     f->SetParLimits(1,getCh(fe-100),getCh(fe+100));
     f->SetParLimits(2,getdCh(50.),getdCh(120.));
-    h->Fit(f,"RQN");
+    h->Fit(f,"RQN0");
     h->GetListOfFunctions()->Add(f);
     return f->GetParameter(1);
 }
+
+//double PeakFinder::getFerrum1238Pos(TH1 *h)
+//{
+//    double fe=1238, dfe=165;
+//    TF1 *f{new TF1("f","gaus(0)+pol1(3)", getCh(fe-dfe), getCh(fe+dfe))};
+//    f->SetParameters(3000,getCh(fe),getdCh(80),1000,0);
+//    f->SetParLimits(0,0,1.0e5);
+//    f->SetParLimits(1,getCh(fe-100),getCh(fe+100));
+//    f->SetParLimits(2,getdCh(50.),getdCh(120.));
+//    h->Fit(f,"RQN");
+//    h->GetListOfFunctions()->Add(f);
+//    return f->GetParameter(1);
+//}
 
 double PeakFinder::getHydrogenPos(TH1 *h)
 {
@@ -184,7 +172,7 @@ double PeakFinder::getHydrogenPos(TH1 *h)
     f.SetParLimits(0,0,1.0e5);
     f.SetParLimits(1,getCh(posE-100),getCh(posE+100));
     f.SetParLimits(2,getdCh(50.),getdCh(120.));
-    h->Fit(&f,"RN0");
+    h->Fit(&f,"RQN0");
 
 
     auto ff = [&](double *x, double *par){
@@ -220,7 +208,7 @@ double PeakFinder::getHydrogenPos(TH1 *h)
     f1.SetParLimits(3,0.01,0.2);
     f1.SetParLimits(4,0.,1.0e5);
     f1.SetParLimits(5,-100.,0.);
-    h->Fit(&f1,"RQ");
+    h->Fit(&f1,"RQN0");
 
     return f1.GetParameter(1);
 }
@@ -239,7 +227,7 @@ double PeakFinder::getCarbonPos(TH1 *h, double appPos)
     f.SetParLimits(2, dL * 0.05, dL);
     f.SetParLimits(3, 0.0, h->GetBinContent(h->GetXaxis()->FindBin(pos)));
     f.SetParLimits(4, 0.0, -1.0 * DBL_MAX);
-    h->Fit("f", "RQ");
+    h->Fit("f", "RQN0");
 
     return f.GetParameter(1);
 }
@@ -263,9 +251,9 @@ double PeakFinder::getOxygenPos(TH1 *h, double appPos)
     f.SetParLimits(3, 0, 1.0e5);
     f.SetParLimits(4, getCh(5900.0), getCh(6450.0));
     f.SetParLimits(5, getdCh(50.0), getdCh(120.0));
-    h->Fit("f","RQ0");
+    h->Fit("f","RQN0");
     f.SetRange(f.GetParameter(1) - 3.0 * f.GetParameter(2), f.GetParameter(4) + 3.0 * f.GetParameter(5));
-    h->Fit("f","RQ");
+    h->Fit("f","RQN0");
     return f.GetParameter(4);
 }
 
@@ -287,7 +275,12 @@ double PeakFinder::getFerrum7631Pos(TH1 *h, double appPos)
     f.SetParLimits(5,getdCh(50.),getdCh(120.));
     h->Fit("f","RQN0");
     f.SetRange(f.GetParameter(4)-getdCh(dfc1),f.GetParameter(4)+getdCh(dfc2));
-    h->Fit("f","RQ");
+    h->Fit("f","RQN0");
     return f.GetParameter(4);
+}
+
+const std::vector<std::vector<EnergyPeak> > &PeakFinder::energyPeaks() const
+{
+    return _energyPeaks;
 }
 

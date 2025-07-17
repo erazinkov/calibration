@@ -10,6 +10,7 @@
 #include "channelmap.h"
 
 #include "timepeaksfinder.h"
+#include "energypeak.h"
 
 class Calibration
 {
@@ -41,7 +42,6 @@ private:
     void fillHistChannel(const std::vector<dec_ev_t> &events, TH1 *h, double min, double max, bool exclude);
     void fillHistEnergy(const std::vector<dec_ev_t> &events, TH1 *h, double min, double max, bool exclude, TF1 f);
 
-    void drawHistsToFile(const std::string &psName, const std::vector<std::vector<TH1 *> > &hists) const;
     void drawHistsToFile(const std::string &psName, const std::vector<std::vector<std::shared_ptr<TH1>> > &hists) const;
     void prepareHists(const std::string &histName,
                       int nBinsX,
@@ -52,21 +52,7 @@ private:
                       int nBinsX,
                       double xLow,
                       double xUp,
-                      std::vector<std::vector<TH1 *>> &hists);
-    void prepareHists(const std::string &histName,
-                      int nBinsX,
-                      double xLow,
-                      double xUp,
-                      std::vector<TH1 *> &hists);
-    void prepareHists(const std::string &histName,
-                      int nBinsX,
-                      double xLow,
-                      double xUp,
                       std::vector<std::shared_ptr<TH1>> &hists);
-    void clearHists(std::vector<std::vector<TH1 *>> &hists);
-    void clearHists(std::vector<TH1 *> &hists);
-    void deleteHists(std::vector<std::vector<TH1 *>> &hists);
-    void deleteHists(std::vector<TH1 *> &hists);
 
     void processTimeStamp();
     void processTime();
@@ -75,6 +61,7 @@ private:
 
     std::vector<std::vector<double>> _timePeaksPos;
     std::vector<std::vector<double>> _par;
+    std::vector<std::vector<EnergyPeak>>  _energyPeaks;
     unsigned long _nGamma;
     unsigned long _nAlpha;
 

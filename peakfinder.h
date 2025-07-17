@@ -6,15 +6,16 @@
 #include <TF1.h>
 
 #include "channelmap.h"
+#include "energypeak.h"
 
 class PeakFinder
 {
 public:
     PeakFinder(const ChannelMap &map);
-    void process(std::vector<TH1 *> &histsSg, std::vector<TH1 *> &histsRc);
+    void process(std::vector<std::shared_ptr<TH1>> &histsSg, std::vector<std::shared_ptr<TH1>> &histsRc);
 
-    std::vector<std::vector<double>> getPar();
-    ~PeakFinder();
+    const std::vector<std::vector<EnergyPeak> > &energyPeaks() const;
+
 private:
     double _calib;
     double _offset;
@@ -32,7 +33,7 @@ private:
     double getOxygenPos(TH1 *h, double appPos);
     double getFerrum7631Pos(TH1 *h, double appPos);
 
-    std::vector<TF1 *> _f;
+    std::vector<std::vector<EnergyPeak>>  _energyPeaks;
 
 };
 
