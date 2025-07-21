@@ -7,7 +7,7 @@
 
 PeakFinder::PeakFinder(const ChannelMap &map) : _calib{1.0}, _offset{0.0}
 {
-    _energyPeaks.resize(map.numberOfChannelsGamma());
+    _energyPeaks.resize(map.numberOfChannels(Channel::GAMMA));
 }
 
 void PeakFinder::process(std::vector<std::shared_ptr<TH1>> &histsSg, std::vector<std::shared_ptr<TH1>> &histsRc)

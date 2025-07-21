@@ -16,8 +16,8 @@
 
 Calibration::Calibration(const ChannelMap &map, std::vector<dec_ev_t> &events) : _map(map), _events(events)
 {
-    _nGamma = map.numberOfChannelsGamma();
-    _nAlpha = map.numberOfChannelsAlpha();
+    _nGamma = map.numberOfChannels(Channel::GAMMA);
+    _nAlpha = map.numberOfChannels(Channel::ALPHA);
 
     _timePeaksPos.resize(_nGamma);
     for (auto & item : _timePeaksPos)
@@ -306,8 +306,6 @@ void Calibration::processGammaEnergy()
         TF1 f("f", fObj, XLOW_CHANNEL, XUP_CHANNEL, 0);
         fs.push_back(f);
     }
-
-
 
     std::vector<std::function<void()>> tasks;
     for (size_t i{0}; i < histsSg.size(); ++i)

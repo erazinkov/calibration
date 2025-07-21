@@ -6,7 +6,7 @@
 #include "progressbar.h"
 
 Decoder::Decoder(const std::string &fileName, const ChannelMap &pre)
-    : fileName_{fileName} , pre_{pre}
+    : fileName_{fileName} , _map{pre}
 {
     process();
 }
@@ -34,7 +34,7 @@ void Decoder::process()
     u_int32_t size{static_cast<u_int32_t>(ifs_.tellg())};
     ifs_.seekg(0);
 
-    auto number{pre_.numberOfChannelsAlpha()};
+    auto number{_map.numberOfChannels(Channel::ALPHA) + _map.numberOfChannels(Channel::GAMMA)};
     counters_.rawhits.resize(number);
 
     events_.clear();
@@ -60,7 +60,7 @@ void Decoder::process()
         {
             currentPosition = static_cast<u_int32_t>(ifs_.tellg());
             ifs_ >> cmap;
-            c = pre_.isCorrect(cmap.map);
+            c = _map.isCorrect(cmap.map);
             if (c)
             {
                 currentPosition -= sizeof(stor_packet_hdr_t);
@@ -87,14 +87,14 @@ void Decoder::process()
             stor_puls_t *g = new stor_puls_t();
             stor_puls_t *a = new stor_puls_t();
             ifs_ >> *g >> *a;
-            if (g->ch < pre_.map().size() && a->ch < pre_.map().size())
+            if (g->ch < _map.map().size() && a->ch < _map.map().size())
             {
                 dec_ev_t event;
-                auto numberGamma{pre_.numberByChannel(g->ch)};
-                auto numberAlpha{pre_.numberByChannel(a->ch)};
-                event.g.index = numberGamma;
+                auto physIdxGamma{_map.map().at(g->ch).physicalIndex()};
+                auto physIdxAlpha{_map.map().at(a->ch).physicalIndex()};
+                event.g.index = physIdxGamma;
                 event.g.amp = g->a;
-                event.a.index = numberAlpha;
+                event.a.index = physIdxAlpha;
                 event.a.amp = a->a;
                 event.tdc = g->t - a->t;
                 double currentTs{static_cast<double>(ev.ts)};
@@ -118,27 +118,20 @@ void Decoder::process()
                 continue;
             }
             ifs_ >> counters;
-            for (size_t i{0}; i < pre_.map().size(); ++i)
+
+            if (!counters.n)
             {
-                auto number{pre_.numberByChannel(i)};
-                auto type{pre_.typeByChannel(i)};
-                switch (type)
+                continue;
+            }
+            for (size_t i{0}; i < _map.map().size(); ++i)
+            {
+                auto physIdx{_map.map().at(i).physicalIndex()};
+                auto type{_map.map().at(i).type()};
+                if (type == Channel::UNKNOWN)
                 {
-                    case ALPHA:
-                    {
-                        counters_.rawhits[number] += counters.rawhits[i];
-                        break;
-                    }
-                    case GAMMA:
-                    {
-                        counters_.rawhits[number] += counters.rawhits[i];
-                        break;
-                    }
-                    default:
-                    {
-                        break;
-                    }
+                    continue;
                 }
+                counters_.rawhits.at(physIdx) += counters.rawhits.at(i);
             }
             counters_.time += counters.time;
             ifs_.ignore(hdr.size

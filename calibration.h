@@ -53,6 +53,10 @@ private:
                       double xLow,
                       double xUp,
                       std::vector<std::shared_ptr<TH1>> &hists);
+    std::vector<std::unique_ptr<TH1>> prepareHists1(const int n, const int m, const std::string histName,
+                      const int nBinsX,
+                      const double xLow,
+                      const double xUp);
 
     void processTimeStamp();
     void processTime();

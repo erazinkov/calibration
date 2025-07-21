@@ -19,9 +19,12 @@
 void process(const std::string fileName)
 {
     const auto pre = ChannelMap::mapNAP();
+    auto start = std::chrono::steady_clock::now();
     Decoder decoder(fileName, pre);
-
     auto r = decoder.events();
+    auto stop = std::chrono::steady_clock::now();
+    std::cout << "Time elapsed, ms: " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << std::endl;
+    return;
     if (!r.empty())
     {
         std::cout << "Events: " << r.size() << std::endl;
@@ -47,12 +50,12 @@ int main(int argc, char *argv[])
 
 //    process("/home/egor/shares/tmp/phantom_3_20cm_1");
 //    process("/home/egor/shares/tmp/jun19-18.32.43");
-//      process("/home/egor/shares/tmp/jun19-16.59.46"); //field5
+      process("/home/egor/shares/tmp/jun19-16.59.46"); //field5
 //      process("/home/egor/shares/tmp/jun19-17.52.17"); //field7
 //      process("/home/egor/shares/tmp/jun19-18.32.43"); //field8
 //    process("/home/egor/shares/tmp/jun16-16.27.36");
-      process("/home/egor/shares/tmp/phantom_3_20cm_1");
-
+//      process("/home/egor/shares/tmp/phantom_3_20cm_1");
+//process("/home/egor/shares/tmp/std_lenta_check_1");
 
 //    process("/home/egor/shares/tmp/kp_static_1"); // file with bad block
     auto stop = std::chrono::steady_clock::now();

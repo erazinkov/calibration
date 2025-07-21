@@ -1,59 +1,40 @@
 #include "channelmap.h"
 
-ChannelMap::ChannelMap(std::vector<std::pair<u_int8_t, u_int8_t>> map)
+ChannelMap::ChannelMap(std::vector<Channel> map)
 {
-    map_ = map;
+    _map = map;
 }
 
 ChannelMap ChannelMap::mapNAP()
 {
-    std::vector<std::pair<u_int8_t, u_int8_t>> map
+    std::vector<Channel> map
     {
-        {GAMMA, 0},
-        {GAMMA, 1},
-        {GAMMA, 2},
-        {GAMMA, 3},
-        {GAMMA, 4},
-        {GAMMA, 5},
-        {UNKNOWN, 111},
-        {ALPHA, 0},
-        {ALPHA, 1},
-        {ALPHA, 2},
-        {ALPHA, 3},
-        {ALPHA, 4},
-        {ALPHA, 5},
-        {ALPHA, 6},
-        {ALPHA, 7},
-        {ALPHA, 8},
+        Channel(Channel::GAMMA, 0, 0),
+        Channel(Channel::GAMMA, 1, 1),
+        Channel(Channel::GAMMA, 2, 2),
+        Channel(Channel::GAMMA, 3, 3),
+        Channel(Channel::GAMMA, 4, 4),
+        Channel(Channel::GAMMA, 5, 5),
+        Channel(Channel::UNKNOWN, 111, 111),
+        Channel(Channel::ALPHA, 0, 0),
+        Channel(Channel::ALPHA, 1, 1),
+        Channel(Channel::ALPHA, 2, 2),
+        Channel(Channel::ALPHA, 3, 3),
+        Channel(Channel::ALPHA, 4, 4),
+        Channel(Channel::ALPHA, 5, 5),
+        Channel(Channel::ALPHA, 6, 6),
+        Channel(Channel::ALPHA, 7, 7),
+        Channel(Channel::ALPHA, 8, 8),
     };
     return ChannelMap(map);
 }
 
-unsigned long ChannelMap::numberOfChannelsAlpha() const
-{
-    return numberOfChannels(ALPHA);
-}
-
-unsigned long ChannelMap::numberOfChannelsGamma() const
-{
-    return numberOfChannels(GAMMA);
-}
-
-u_int8_t ChannelMap::numberByChannel(unsigned long ch) const
-{
-    return map_.at(ch).second;
-}
-
-u_int8_t ChannelMap::typeByChannel(unsigned long ch) const
-{
-    return map_.at(ch).first;
-}
-
-unsigned long ChannelMap::numberOfChannels(EChannelType type) const
+unsigned long ChannelMap::numberOfChannels(Channel::EChannelType type) const
 {
     unsigned long number{};
-    auto it = map_.begin();
-    while ( (it = std::find_if(it, map_.end(), [&type](std::pair<u_int8_t, int> mapItem){return mapItem.first == type;}) ) != map_.end())
+    auto it = _map.begin();
+
+    while ( (it = std::find_if(it, _map.end(), [&type](Channel mapItem){return mapItem.type() == type;}) ) != _map.end())
     {
         ++number;
         ++it;
@@ -62,27 +43,27 @@ unsigned long ChannelMap::numberOfChannels(EChannelType type) const
 }
 
 bool ChannelMap::isCorrect(std::vector<u_int8_t> &map) const {
-    if (map.size() != map_.size())
-    {
-        return false;
-    }
+//    if (map.size() != _map.size())
+//    {
+//        return false;
+//    }
 
-    for (size_t i{0}; i < map_.size(); ++i)
-    {
-        if (map_[i].first == UNKNOWN)
-        {
-            continue;
-        }
-        if ( (map.at(i) & map_.at(i).first) != map_.at(i).first )
-        {
-            return false;
-        }
-    }
+//    for (size_t i{0}; i < _map.size(); ++i)
+//    {
+//        if (_map[i].first == UNKNOWN)
+//        {
+//            continue;
+//        }
+//        if ( (map.at(i) & _map.at(i).first) != _map.at(i).first )
+//        {
+//            return false;
+//        }
+//    }
     return true;
 }
 
-const std::vector<std::pair<u_int8_t, u_int8_t> > &ChannelMap::map() const
+const std::vector<Channel> &ChannelMap::map() const
 {
-    return map_;
+    return _map;
 }
 

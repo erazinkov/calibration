@@ -15,7 +15,7 @@ private:
 
     std::string fileName_;
     std::ifstream ifs_;
-    ChannelMap pre_;
+    ChannelMap _map;
     std::vector<dec_ev_t> events_;
     dec_cnt_t counters_;
 

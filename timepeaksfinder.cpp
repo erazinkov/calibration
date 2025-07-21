@@ -5,10 +5,10 @@
 
 TimePeaksFinder::TimePeaksFinder(const ChannelMap &map)
 {
-    _timePeaksPos.resize(map.numberOfChannelsGamma());
+    _timePeaksPos.resize(map.numberOfChannels(Channel::GAMMA));
     for (auto & item : _timePeaksPos)
     {
-        item.resize(map.numberOfChannelsAlpha(), 0.0);
+        item.resize(map.numberOfChannels(Channel::ALPHA), 0.0);
     }
 }
 
