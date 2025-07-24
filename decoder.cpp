@@ -87,14 +87,15 @@ void Decoder::process()
             stor_puls_t *g = new stor_puls_t();
             stor_puls_t *a = new stor_puls_t();
             ifs_ >> *g >> *a;
-            if (g->ch < _map.map().size() && a->ch < _map.map().size())
+
+            auto idxGamma{_map.getSoftwareIdxByHardwareIdx(g->ch)};
+            auto idxAlpha{_map.getSoftwareIdxByHardwareIdx(a->ch)};
+            if (idxGamma.has_value() && idxAlpha.has_value())
             {
                 dec_ev_t event;
-                auto physIdxGamma{_map.map().at(g->ch).physicalIndex()};
-                auto physIdxAlpha{_map.map().at(a->ch).physicalIndex()};
-                event.g.index = physIdxGamma;
+                event.g.index = idxGamma.value();
                 event.g.amp = g->a;
-                event.a.index = physIdxAlpha;
+                event.a.index = idxAlpha.value();
                 event.a.amp = a->a;
                 event.tdc = g->t - a->t;
                 double currentTs{static_cast<double>(ev.ts)};
@@ -105,6 +106,24 @@ void Decoder::process()
                 prevTs = event.ts;
                 events_.push_back(event);
             }
+//            if (g->ch < _map.map().size() && a->ch < _map.map().size())
+//            {
+//                dec_ev_t event;
+//                auto idxGamma{_map.map().at(g->ch).softwareIndex()};
+//                auto idxAlpha{_map.map().at(a->ch).softwareIndex()};
+//                event.g.index = idxGamma;
+//                event.g.amp = g->a;
+//                event.a.index = idxAlpha;
+//                event.a.amp = a->a;
+//                event.tdc = g->t - a->t;
+//                double currentTs{static_cast<double>(ev.ts)};
+//                event.ts = currentTs;
+//                if (isIntegerOverflow(event.ts, prevTs) && events_.size()) {
+//                    event.ts += UINT32_MAX;
+//                }
+//                prevTs = event.ts;
+//                events_.push_back(event);
+//            }
             delete g;
             delete a;
             continue;
@@ -123,16 +142,16 @@ void Decoder::process()
             {
                 continue;
             }
-            for (size_t i{0}; i < _map.map().size(); ++i)
-            {
-                auto physIdx{_map.map().at(i).physicalIndex()};
-                auto type{_map.map().at(i).type()};
-                if (type == Channel::UNKNOWN)
-                {
-                    continue;
-                }
-                counters_.rawhits.at(physIdx) += counters.rawhits.at(i);
-            }
+//            for (size_t i{0}; i < _map.map().size(); ++i)
+//            {
+//                auto idx{_map.map().at(i).softwareIndex()};
+//                auto type{_map.map().at(i).type()};
+//                if (type == Channel::UNKNOWN)
+//                {
+//                    continue;
+//                }
+//                counters_.rawhits.at(idx) += counters.rawhits.at(i);
+//            }
             counters_.time += counters.time;
             ifs_.ignore(hdr.size
                        - sizeof(stor_packet_hdr_t)

@@ -1,5 +1,7 @@
 #include "channelmap.h"
 
+#include <algorithm>
+
 ChannelMap::ChannelMap(std::vector<Channel> map)
 {
     _map = map;
@@ -7,6 +9,8 @@ ChannelMap::ChannelMap(std::vector<Channel> map)
 
 ChannelMap ChannelMap::mapNAP()
 {
+
+
     std::vector<Channel> map
     {
         Channel(Channel::GAMMA, 0, 0),
@@ -66,4 +70,21 @@ const std::vector<Channel> &ChannelMap::map() const
 {
     return _map;
 }
+
+std::optional<u_int8_t> ChannelMap::getSoftwareIdxByHardwareIdx(u_int8_t hardwareIndex)
+{
+
+
+    auto it{std::find_if(_map.begin(), _map.end(), [&hardwareIndex](Channel channel){
+            return channel.hardwareIndex() == hardwareIndex;
+        })};
+
+    if (it != _map.end())
+    {
+        return it.base()->softwareIndex();
+    }
+
+    return std::nullopt;
+}
+
 

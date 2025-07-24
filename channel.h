@@ -19,15 +19,15 @@ public:
         SELF    = FLAG_INACTIVE,
         UNKNOWN = FLAG_INACTIVE,
     };
-    Channel(EChannelType type, u_int8_t hardwareIndex, u_int8_t physicalIndex);
+    Channel(EChannelType type, u_int8_t hardwareIndex, u_int8_t softwareIndex);
     u_int8_t hardwareIndex() const;
-    u_int8_t physicalIndex() const;
+    u_int8_t softwareIndex() const;
 
     EChannelType type() const;
 
 private:
     u_int8_t _hardwareIndex;
-    u_int8_t _physicalIndex;
+    u_int8_t _softwareIndex;
     EChannelType _type;
 };
 
