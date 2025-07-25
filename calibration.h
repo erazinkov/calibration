@@ -2,6 +2,7 @@
 #define CALIBRATION_H
 
 #include <functional>
+#include <future>
 
 #include <TH1.h>
 #include <TMath.h>

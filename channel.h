@@ -2,6 +2,7 @@
 #define CHANNEL_H
 
 #include <sys/types.h>
+#include <optional>
 
 class Channel
 {
@@ -14,20 +15,18 @@ public:
     };
 
     enum EChannelType {
-        GAMMA   = FLAG_ACTIVE | FLAG_GAMMA,
-        ALPHA   = FLAG_ACTIVE | FLAG_ALPHA,
-        SELF    = FLAG_INACTIVE,
-        UNKNOWN = FLAG_INACTIVE,
+        GAMMA    = FLAG_ACTIVE | FLAG_GAMMA,
+        ALPHA    = FLAG_ACTIVE | FLAG_ALPHA,
+        SELF     = FLAG_INACTIVE,
+        UNKNOWN  = FLAG_INACTIVE,
     };
-    Channel(EChannelType type, u_int8_t hardwareIndex, u_int8_t softwareIndex);
-    u_int8_t hardwareIndex() const;
-    u_int8_t softwareIndex() const;
+    Channel(EChannelType type, std::optional<u_int8_t> index);
+    std::optional<u_int8_t> index() const;
 
     EChannelType type() const;
 
 private:
-    u_int8_t _hardwareIndex;
-    u_int8_t _softwareIndex;
+    std::optional<u_int8_t> _index;
     EChannelType _type;
 };
 

@@ -11,7 +11,7 @@
 #include "piecewiselinearfunction.h"
 #include "polynomialfunction.h"
 
-#include <functional>
+#include <sstream>
 
 
 Calibration::Calibration(const ChannelMap &map, std::vector<dec_ev_t> &events) : _map(map), _events(events)

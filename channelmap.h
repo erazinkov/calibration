@@ -1,10 +1,10 @@
 #ifndef CHANNEL_mapH
 #define CHANNEL_mapH
 
+#include <map>
 #include <vector>
-#include <sys/types.h>
-#include <bits/stdc++.h>
-#include <optional>
+//#include <sys/types.h>
+//#include <bits/stdc++.h>
 
 #include "channel.h"
 
@@ -14,11 +14,12 @@ public:
     static ChannelMap mapNAP();
     unsigned long numberOfChannels(Channel::EChannelType type) const;
     bool isCorrect(std::vector<u_int8_t> &) const;
-    const std::vector<Channel> &map() const;
-    std::optional<u_int8_t> getSoftwareIdxByHardwareIdx(u_int8_t hardwareIndex);
+    const std::map<u_int8_t, Channel> &map() const;
+    std::optional<u_int8_t> getIdxByHardwareIdx(u_int8_t &hardwareIndex);
+
 private:
-    std::vector<Channel> _map;
-    ChannelMap(std::vector<Channel> map);
+    std::map<u_int8_t, Channel> _map;
+    ChannelMap(std::map<u_int8_t, Channel> map);
 };
 
 #endif // CHANNEL_mapH

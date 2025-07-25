@@ -52,7 +52,7 @@ void Decoder::process()
         return std::abs(currentTs - prevTs) > limit;
     };
 
-
+auto counter{0};
     while (ifs_)
     {
         ifs_ >> hdr;
@@ -88,8 +88,24 @@ void Decoder::process()
             stor_puls_t *a = new stor_puls_t();
             ifs_ >> *g >> *a;
 
-            auto idxGamma{_map.getSoftwareIdxByHardwareIdx(g->ch)};
-            auto idxAlpha{_map.getSoftwareIdxByHardwareIdx(a->ch)};
+
+//                dec_ev_t event;
+//                event.g.index = g->ch;
+//                event.g.amp = g->a;
+//                event.a.index = a->ch;
+//                event.a.amp = a->a;
+//                event.tdc = g->t - a->t;
+//                double currentTs{static_cast<double>(ev.ts)};
+//                event.ts = currentTs;
+//                if (isIntegerOverflow(event.ts, prevTs) && events_.size()) {
+//                    event.ts += UINT32_MAX;
+//                }
+//                prevTs = event.ts;
+//                events_.push_back(event);
+
+
+            auto idxGamma{_map.getIdxByHardwareIdx(g->ch)};
+            auto idxAlpha{_map.getIdxByHardwareIdx(a->ch)};
             if (idxGamma.has_value() && idxAlpha.has_value())
             {
                 dec_ev_t event;

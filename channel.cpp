@@ -1,19 +1,14 @@
 #include "channel.h"
 
-Channel::Channel(EChannelType type, u_int8_t hardwareIndex, u_int8_t softwareIndex)
-    : _hardwareIndex{hardwareIndex}, _softwareIndex{softwareIndex}, _type{type}
+Channel::Channel(EChannelType type, std::optional<u_int8_t> index)
+    : _index{index}, _type{type}
 {
 
 }
 
-u_int8_t Channel::hardwareIndex() const
+std::optional<u_int8_t> Channel::index() const
 {
-    return _hardwareIndex;
-}
-
-u_int8_t Channel::softwareIndex() const
-{
-    return _softwareIndex;
+    return _index;
 }
 
 Channel::EChannelType Channel::type() const
