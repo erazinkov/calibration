@@ -15,7 +15,7 @@ public:
     unsigned long numberOfChannels(Channel::EChannelType type) const;
     bool isCorrect(std::vector<u_int8_t> &) const;
     const std::map<u_int8_t, Channel> &map() const;
-    std::optional<u_int8_t> getIndexByHardwareIndex(u_int8_t &hardwareIndex);
+    std::optional<u_int8_t> getIdxByHardwareIdx(u_int8_t &hardwareIndex);
 
 private:
     std::map<u_int8_t, Channel> _map;

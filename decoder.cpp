@@ -88,8 +88,8 @@ void Decoder::process()
             ifs_ >> *g >> *a;
 
 
-            auto idxGamma{_map.getIndexByHardwareIndex(g->ch)};
-            auto idxAlpha{_map.getIndexByHardwareIndex(a->ch)};
+            auto idxGamma{_map.getIdxByHardwareIdx(g->ch)};
+            auto idxAlpha{_map.getIdxByHardwareIdx(a->ch)};
             if (idxGamma.has_value() && idxAlpha.has_value())
             {
                 dec_ev_t event;
@@ -106,6 +106,24 @@ void Decoder::process()
                 prevTs = event.ts;
                 events_.push_back(event);
             }
+//            if (g->ch < _map.map().size() && a->ch < _map.map().size())
+//            {
+//                dec_ev_t event;
+//                auto idxGamma{_map.map().at(g->ch).softwareIndex()};
+//                auto idxAlpha{_map.map().at(a->ch).softwareIndex()};
+//                event.g.index = idxGamma;
+//                event.g.amp = g->a;
+//                event.a.index = idxAlpha;
+//                event.a.amp = a->a;
+//                event.tdc = g->t - a->t;
+//                double currentTs{static_cast<double>(ev.ts)};
+//                event.ts = currentTs;
+//                if (isIntegerOverflow(event.ts, prevTs) && events_.size()) {
+//                    event.ts += UINT32_MAX;
+//                }
+//                prevTs = event.ts;
+//                events_.push_back(event);
+//            }
             delete g;
             delete a;
             continue;

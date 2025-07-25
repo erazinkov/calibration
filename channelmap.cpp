@@ -1,7 +1,7 @@
 #include "channelmap.h"
 
 #include <algorithm>
-#include <execution>
+#include <stdexcept>
 
 ChannelMap::ChannelMap(std::map<u_int8_t, Channel> map)
 {
@@ -72,8 +72,25 @@ const std::map<u_int8_t, Channel> &ChannelMap::map() const
     return _map;
 }
 
-std::optional<u_int8_t> ChannelMap::getIndexByHardwareIndex(u_int8_t &hardwareIndex)
+std::optional<u_int8_t> ChannelMap::getIdxByHardwareIdx(u_int8_t &hardwareIndex)
 {
+//    auto it{std::find_if(_map.begin(), _map.end(), [&hardwareIndex](std::pair<u_int8_t, Channel> mapItem){
+//            return mapItem.second.index() == hardwareIndex && mapItem.second.type() != Channel::UNKNOWN;
+//        })};
+
+//    if (it != _map.end())
+//    {
+//        return it->second.index();
+//    }
+//    return std::nullopt;
+//    try
+//    {
+//        return _map.at(hardwareIndex).index();
+//    }
+//    catch (const std::out_of_range &)
+//    {
+//        return std::nullopt;
+//    }
     auto it{_map.find(hardwareIndex)};
     if (it != _map.end())
     {
