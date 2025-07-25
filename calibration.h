@@ -70,6 +70,9 @@ private:
     unsigned long _nGamma;
     unsigned long _nAlpha;
 
+    std::vector<int> _idxsGamma;
+    std::vector<int> _idxsAlpha;
+
     class AmpPeakFitFunctionObject
     {
     public:

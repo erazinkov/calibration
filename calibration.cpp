@@ -16,6 +16,9 @@
 
 Calibration::Calibration(const ChannelMap &map, std::vector<dec_ev_t> &events) : _map(map), _events(events)
 {
+    _idxsGamma = map.getIdxsByType(Channel::GAMMA);
+    _idxsAlpha = map.getIdxsByType(Channel::ALPHA);
+
     _nGamma = map.numberOfChannels(Channel::GAMMA);
     _nAlpha = map.numberOfChannels(Channel::ALPHA);
 
@@ -42,8 +45,8 @@ void Calibration::process()
 {
 //    processTimeStamp();
     processTime();
-    processGammaCh();
-    processGammaEnergy();
+//    processGammaCh();
+//    processGammaEnergy();
 }
 
 std::vector<dec_ev_t> Calibration::selectedEvents(uint8_t ig, u_int8_t ia)
@@ -53,7 +56,7 @@ std::vector<dec_ev_t> Calibration::selectedEvents(uint8_t ig, u_int8_t ia)
 
     while ( (it = std::find_if(it, _events.end(), [&ig, &ia](dec_ev_t e){
                                return e.g.index == ig && e.a.index == ia;
-})) != _events.end() ) {
+    })) != _events.end() ) {
         selectedEvents.push_back(*it);
         ++it;
     }
@@ -178,11 +181,11 @@ void Calibration::processTimeStamp()
 
 void Calibration::processTime()
 {
-    std::vector<std::vector<std::shared_ptr<TH1>>> hists(_nGamma);
+    std::vector<std::vector<std::shared_ptr<TH1>>> hists(_idxsGamma.size());
 
-    for (size_t i{0}; i < hists.size(); ++i)
+    for (auto &item : hists)
     {
-        hists.at(i).resize(_nAlpha, nullptr);
+        item.resize(_idxsAlpha.size(), nullptr);
     }
 
     prepareHists("histTime", BINS_TIME, XLOW_TIME, XUP_TIME, hists);
@@ -195,7 +198,7 @@ void Calibration::processTime()
         for (size_t j{0}; j <  hists.at(i).size(); ++j)
         {
             tasks.push_back([this, &hists, i, j](){
-                auto sE{selectedEvents(static_cast<u_int8_t>(i), static_cast<u_int8_t>(j))};
+                auto sE{selectedEvents(static_cast<u_int8_t>(_idxsGamma.at(i)), static_cast<u_int8_t>(_idxsAlpha.at(j)))};
                 fillHistTime(sE, hists.at(i).at(j).get(), 0.0);
             });
         }
@@ -207,7 +210,7 @@ void Calibration::processTime()
     std::cout << "Time elapsed, ms: " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << std::endl;
 
 
-    _timePeaksFinder.get()->calculatePeaksPos(hists);
+//    _timePeaksFinder.get()->calculatePeaksPos(hists);
 
     const std::string psName{"time.ps"};
     drawHistsToFile(psName, hists);

@@ -13,6 +13,9 @@ class ChannelMap
 public:
     static ChannelMap mapNAP();
     unsigned long numberOfChannels(Channel::EChannelType type) const;
+
+    std::vector<int> getIdxsByType(Channel::EChannelType type) const;
+
     bool isCorrect(std::vector<u_int8_t> &) const;
     const std::map<u_int8_t, Channel> &map() const;
     std::optional<u_int8_t> getIdxByHardwareIdx(u_int8_t &hardwareIndex);

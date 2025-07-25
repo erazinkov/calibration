@@ -16,7 +16,7 @@ ChannelMap ChannelMap::mapNAP()
         {0, Channel(Channel::GAMMA, 0)},
         {1, Channel(Channel::GAMMA, 1)},
         {2, Channel(Channel::GAMMA, 2)},
-        {3, Channel(Channel::GAMMA, 3)},
+        {3, Channel(Channel::GAMMA, std::nullopt)},
         {4, Channel(Channel::GAMMA, 4)},
         {5, Channel(Channel::GAMMA, 5)},
         {6, Channel(Channel::UNKNOWN, 111)},
@@ -45,6 +45,23 @@ unsigned long ChannelMap::numberOfChannels(Channel::EChannelType type) const
         ++it;
     }
     return number;
+}
+
+std::vector<int> ChannelMap::getIdxsByType(Channel::EChannelType type) const
+{
+    std::vector<int> idxs;
+
+    auto it = _map.begin();
+
+    while ( (it = std::find_if(it, _map.end(), [&type](std::pair<u_int8_t, Channel> mapItem){return mapItem.second.type() == type;}) ) != _map.end())
+    {
+        if ((*it).second.index().has_value())
+        {
+            idxs.push_back((*it).second.index().value());
+        }
+        ++it;
+    }
+    return idxs;
 }
 
 bool ChannelMap::isCorrect(std::vector<u_int8_t> &map) const {
