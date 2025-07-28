@@ -37,7 +37,7 @@ private:
     const ChannelMap _map;
     const std::vector<dec_ev_t> _events;
 
-    std::vector<dec_ev_t> selectedEvents(uint8_t ig, u_int8_t ia);
+    std::vector<dec_ev_t> selectedEvents(uint8_t idxGamma, u_int8_t idxAlpha);
 
     void fillHistTime(const std::vector<dec_ev_t> &, TH1 *, double);
     void fillHistChannel(const std::vector<dec_ev_t> &events, TH1 *h, double min, double max, bool exclude);
@@ -54,6 +54,17 @@ private:
                       double xLow,
                       double xUp,
                       std::vector<std::shared_ptr<TH1>> &hists);
+    std::vector<std::vector<std::shared_ptr<TH1>>> prepareHists1(const std::string &histName,
+                                                                int nBinsX,
+                                                                double xLow,
+                                                                double xUp,
+                                                                std::vector<int> &idxsGamma,
+                                                                std::vector<int> &idxsAlpha);
+    std::vector<std::shared_ptr<TH1>> prepareHists1(const std::string &histName,
+                                                                int nBinsX,
+                                                                double xLow,
+                                                                double xUp,
+                                                                std::vector<int> &idxs);
     std::vector<std::unique_ptr<TH1>> prepareHists1(const int n, const int m, const std::string histName,
                       const int nBinsX,
                       const double xLow,

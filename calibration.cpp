@@ -45,17 +45,17 @@ void Calibration::process()
 {
 //    processTimeStamp();
     processTime();
-//    processGammaCh();
-//    processGammaEnergy();
+    processGammaCh();
+    processGammaEnergy();
 }
 
-std::vector<dec_ev_t> Calibration::selectedEvents(uint8_t ig, u_int8_t ia)
+std::vector<dec_ev_t> Calibration::selectedEvents(uint8_t idxGamma, u_int8_t idxAlpha)
 {
     std::vector<dec_ev_t> selectedEvents{};
     auto it{_events.begin()};
 
-    while ( (it = std::find_if(it, _events.end(), [&ig, &ia](dec_ev_t e){
-                               return e.g.index == ig && e.a.index == ia;
+    while ( (it = std::find_if(it, _events.end(), [&idxGamma, &idxAlpha](dec_ev_t e){
+                               return e.g.index == idxGamma && e.a.index == idxAlpha;
     })) != _events.end() ) {
         selectedEvents.push_back(*it);
         ++it;
@@ -174,6 +174,49 @@ void Calibration::prepareHists(const std::string &histName, int nBinsX, double x
     }
 }
 
+std::vector<std::vector<std::shared_ptr<TH1>>> Calibration::prepareHists1(const std::string &histName,
+                                                                          int nBinsX,
+                                                                          double xLow,
+                                                                          double xUp,
+                                                                          std::vector<int> &idxsGamma,
+                                                                          std::vector<int> &idxsAlpha)
+{
+    std::vector<std::vector<std::shared_ptr<TH1>>> hists;
+    hists.resize(idxsGamma.size());
+    std::stringstream ss;
+    for (size_t i{0}; i < idxsGamma.size(); ++i)
+    {
+        for (size_t j{0}; j <  idxsAlpha.size(); ++j)
+        {
+            ss.clear();ss.str("");
+            ss << histName << "_" << idxsGamma.at(i) << "_" << idxsAlpha.at(j);
+            auto h{std::make_shared<TH1D>(ss.str().c_str(), ss.str().c_str(), nBinsX, xLow, xUp)};
+            h->Sumw2();
+            hists.at(i).push_back(h);
+        }
+    }
+    return hists;
+}
+
+std::vector<std::shared_ptr<TH1> > Calibration::prepareHists1(const std::string &histName,
+                                                              int nBinsX,
+                                                              double xLow,
+                                                              double xUp,
+                                                              std::vector<int> &idxs)
+{
+    std::vector<std::shared_ptr<TH1>> hists;
+    std::stringstream ss;
+    for (size_t i{0}; i < idxs.size(); ++i)
+    {
+        ss.clear();ss.str("");
+        ss << histName << "_" << idxs.at(i);
+        auto h{std::make_shared<TH1D>(ss.str().c_str(), ss.str().c_str(), nBinsX, xLow, xUp)};
+        h->Sumw2();
+        hists.push_back(h);
+    }
+    return hists;
+}
+
 void Calibration::processTimeStamp()
 {
 
@@ -181,14 +224,7 @@ void Calibration::processTimeStamp()
 
 void Calibration::processTime()
 {
-    std::vector<std::vector<std::shared_ptr<TH1>>> hists(_idxsGamma.size());
-
-    for (auto &item : hists)
-    {
-        item.resize(_idxsAlpha.size(), nullptr);
-    }
-
-    prepareHists("histTime", BINS_TIME, XLOW_TIME, XUP_TIME, hists);
+    auto hists{prepareHists1("histTime", BINS_TIME, XLOW_TIME, XUP_TIME, _idxsGamma, _idxsAlpha)};
 
     auto start = std::chrono::steady_clock::now();
 
@@ -209,28 +245,17 @@ void Calibration::processTime()
     auto stop = std::chrono::steady_clock::now();
     std::cout << "Time elapsed, ms: " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << std::endl;
 
-
-//    _timePeaksFinder.get()->calculatePeaksPos(hists);
+    _timePeaksFinder.get()->calculatePeaksPos(hists);
 
     const std::string psName{"time.ps"};
     drawHistsToFile(psName, hists);
-
 }
 
 void Calibration::processGammaCh()
 {
-    std::vector<std::vector<std::shared_ptr<TH1>>> histsSg(_nGamma);
-    std::vector<std::vector<std::shared_ptr<TH1>>> histsBg(_nGamma);
-    std::vector<std::vector<std::shared_ptr<TH1>>> histsRc(_nGamma);
-    for (size_t i{0}; i < histsSg.size(); ++i)
-    {
-        histsSg.at(i).resize(_nAlpha, nullptr);
-        histsBg.at(i).resize(_nAlpha, nullptr);
-        histsRc.at(i).resize(_nAlpha, nullptr);
-    }
-    prepareHists("histSg", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, histsSg);
-    prepareHists("histBg", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, histsBg);
-    prepareHists("histRc", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, histsRc);
+    auto histsSg{prepareHists1("histSg", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, _idxsGamma, _idxsAlpha)};
+    auto histsBg{prepareHists1("histBg", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, _idxsGamma, _idxsAlpha)};
+    auto histsRc{prepareHists1("histRc", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, _idxsGamma, _idxsAlpha)};
 
     std::vector<std::function<void()>> tasks;
     for (size_t i{0}; i < histsSg.size(); ++i)
@@ -238,7 +263,7 @@ void Calibration::processGammaCh()
         for (size_t j{0}; j <  histsSg.at(i).size(); ++j)
         {
             tasks.push_back([this, i, j, &histsSg, &histsBg, &histsRc] () {
-                auto sE{selectedEvents(static_cast<u_int8_t>(i), static_cast<u_int8_t>(j))};
+                auto sE{selectedEvents(static_cast<u_int8_t>(_idxsGamma.at(i)), static_cast<u_int8_t>(_idxsAlpha.at(j)))};
                 auto tSgMin{_timePeaksFinder.get()->timePeaksPos().at(i).at(j) - 3.0};
                 auto tSgMax{_timePeaksFinder.get()->timePeaksPos().at(i).at(j) + 3.0};
                 fillHistChannel(sE, histsSg.at(i).at(j).get(), tSgMin, tSgMax, false);
@@ -249,13 +274,10 @@ void Calibration::processGammaCh()
             });
         }
     }
-
     func_async(tasks.begin(), tasks.end());
     tasks.clear();
 
-    std::vector<std::shared_ptr<TH1>> histsSgGamma(_nGamma, nullptr);
-    prepareHists("histSgGamma", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, histsSgGamma);
-
+    auto histsSgGamma{prepareHists1("histSgGamma", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, _idxsGamma)};
     for (size_t i{0}; i < histsSg.size(); ++i)
     {
         for (size_t j{0}; j < histsSg.at(i).size(); ++j)
@@ -264,11 +286,7 @@ void Calibration::processGammaCh()
             histsSgGamma.at(i).get()->Add(histsBg.at(i).at(j).get(), -6.0 / 10.0);
         }
     }
-
-
-    std::vector<std::shared_ptr<TH1>> histsRcGamma(_nGamma, nullptr);
-    prepareHists("histRcGamma", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, histsRcGamma);
-
+    auto histsRcGamma{prepareHists1("histRcGamma", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, _idxsGamma)};
     for (size_t i{0}; i < histsRc.size(); ++i)
     {
         for (size_t j{0}; j < histsRc.at(i).size(); ++j)
@@ -276,15 +294,72 @@ void Calibration::processGammaCh()
             histsRcGamma.at(i).get()->Add(histsRc.at(i).at(j).get());
         }
     }
-
-
-
     PeakFinder peakFinder(_map);
     peakFinder.process(histsSgGamma, histsRcGamma);
-
-
-
     _energyPeaks = peakFinder.energyPeaks();
+
+//    std::vector<std::vector<std::shared_ptr<TH1>>> histsSg(_nGamma);
+//    std::vector<std::vector<std::shared_ptr<TH1>>> histsBg(_nGamma);
+//    std::vector<std::vector<std::shared_ptr<TH1>>> histsRc(_nGamma);
+//    for (size_t i{0}; i < histsSg.size(); ++i)
+//    {
+//        histsSg.at(i).resize(_nAlpha, nullptr);
+//        histsBg.at(i).resize(_nAlpha, nullptr);
+//        histsRc.at(i).resize(_nAlpha, nullptr);
+//    }
+//    prepareHists("histSg", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, histsSg);
+//    prepareHists("histBg", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, histsBg);
+//    prepareHists("histRc", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, histsRc);
+
+//    std::vector<std::function<void()>> tasks;
+//    for (size_t i{0}; i < histsSg.size(); ++i)
+//    {
+//        for (size_t j{0}; j <  histsSg.at(i).size(); ++j)
+//        {
+//            tasks.push_back([this, i, j, &histsSg, &histsBg, &histsRc] () {
+//                auto sE{selectedEvents(static_cast<u_int8_t>(i), static_cast<u_int8_t>(j))};
+//                auto tSgMin{_timePeaksFinder.get()->timePeaksPos().at(i).at(j) - 3.0};
+//                auto tSgMax{_timePeaksFinder.get()->timePeaksPos().at(i).at(j) + 3.0};
+//                fillHistChannel(sE, histsSg.at(i).at(j).get(), tSgMin, tSgMax, false);
+//                fillHistChannel(sE, histsRc.at(i).at(j).get(), tSgMin - 1.0, tSgMax + 1.0, true);
+//                auto tBgMin{_timePeaksFinder.get()->timePeaksPos().at(i).at(j) - 30.0};
+//                auto tBgMax{_timePeaksFinder.get()->timePeaksPos().at(i).at(j) - 20.0};
+//                fillHistChannel(sE, histsBg.at(i).at(j).get(), tBgMin, tBgMax, false);
+//            });
+//        }
+//    }
+
+//    func_async(tasks.begin(), tasks.end());
+//    tasks.clear();
+
+//    std::vector<std::shared_ptr<TH1>> histsSgGamma(_nGamma, nullptr);
+//    prepareHists("histSgGamma", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, histsSgGamma);
+
+//    for (size_t i{0}; i < histsSg.size(); ++i)
+//    {
+//        for (size_t j{0}; j < histsSg.at(i).size(); ++j)
+//        {
+//            histsSgGamma.at(i).get()->Add(histsSg.at(i).at(j).get());
+//            histsSgGamma.at(i).get()->Add(histsBg.at(i).at(j).get(), -6.0 / 10.0);
+//        }
+//    }
+
+
+//    std::vector<std::shared_ptr<TH1>> histsRcGamma(_nGamma, nullptr);
+//    prepareHists("histRcGamma", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, histsRcGamma);
+
+//    for (size_t i{0}; i < histsRc.size(); ++i)
+//    {
+//        for (size_t j{0}; j < histsRc.at(i).size(); ++j)
+//        {
+//            histsRcGamma.at(i).get()->Add(histsRc.at(i).at(j).get());
+//        }
+//    }
+
+//    PeakFinder peakFinder(_map);
+//    peakFinder.process(histsSgGamma, histsRcGamma);
+
+//    _energyPeaks = peakFinder.energyPeaks();
 
 //    const std::string psName{"gamma_ch.ps"};
 //    drawHistsToFile(psName, histsD);
@@ -292,15 +367,8 @@ void Calibration::processGammaCh()
 
 void Calibration::processGammaEnergy()
 {
-    std::vector<std::vector<std::shared_ptr<TH1>>> histsSg(_nGamma);
-    std::vector<std::vector<std::shared_ptr<TH1>>> histsBg(_nGamma);
-    for (size_t i{0}; i < histsSg.size(); ++i)
-    {
-        histsSg.at(i).resize(_nAlpha, nullptr);
-        histsBg.at(i).resize(_nAlpha, nullptr);
-    }
-    prepareHists("histSg", BINS_ENERGY, XLOW_ENERGY, XUP_ENERGY, histsSg);
-    prepareHists("histBg", BINS_ENERGY, XLOW_ENERGY, XUP_ENERGY, histsBg);
+    auto histsSg(prepareHists1("histSg", BINS_ENERGY, XLOW_ENERGY, XUP_ENERGY, _idxsGamma, _idxsAlpha));
+    auto histsBg(prepareHists1("histBg", BINS_ENERGY, XLOW_ENERGY, XUP_ENERGY, _idxsGamma, _idxsAlpha));
 
     std::vector<TF1> fs;
     for (size_t i{0}; i < histsSg.size(); ++i)
@@ -326,14 +394,10 @@ void Calibration::processGammaEnergy()
             });
         }
     }
-
     func_async(tasks.begin(), tasks.end());
-
     tasks.clear();
 
-    std::vector<std::shared_ptr<TH1>> histsSgGamma(_nGamma, nullptr);
-    prepareHists("histSgGamma", BINS_ENERGY, XLOW_ENERGY, XUP_ENERGY, histsSgGamma);
-
+    auto histsSgGamma{prepareHists1("histSgGamma", BINS_ENERGY, XLOW_ENERGY, XUP_ENERGY, _idxsGamma)};
     for (size_t i{0}; i < histsSg.size(); ++i)
     {
         for (size_t j{0}; j < histsSg.at(i).size(); ++j)
@@ -344,17 +408,80 @@ void Calibration::processGammaEnergy()
     }
 
     std::unique_ptr<TH1D> hist{new TH1D("hist", "hist", BINS_ENERGY, XLOW_ENERGY, XUP_ENERGY)};
-
     for (size_t i{0}; i < histsSg.size(); ++i)
     {
         hist.get()->Add(histsSgGamma.at(i).get());
     }
-
-    const std::string outputFileName{"field5_r.root"};
+    const std::string outputFileName{"output.root"};
 
     std::unique_ptr<TFile> file{TFile::Open((outputFileName).c_str(), "RECREATE")};
     if (file->IsOpen())
     {
         hist.get()->Write(hist.get()->GetName(), TObject::kOverwrite);
     }
+//    std::vector<std::vector<std::shared_ptr<TH1>>> histsSg(_nGamma);
+//    std::vector<std::vector<std::shared_ptr<TH1>>> histsBg(_nGamma);
+//    for (size_t i{0}; i < histsSg.size(); ++i)
+//    {
+//        histsSg.at(i).resize(_nAlpha, nullptr);
+//        histsBg.at(i).resize(_nAlpha, nullptr);
+//    }
+//    prepareHists("histSg", BINS_ENERGY, XLOW_ENERGY, XUP_ENERGY, histsSg);
+//    prepareHists("histBg", BINS_ENERGY, XLOW_ENERGY, XUP_ENERGY, histsBg);
+
+//    std::vector<TF1> fs;
+//    for (size_t i{0}; i < histsSg.size(); ++i)
+//    {
+//        PiecewiseLinearFunction fObj(_energyPeaks.at(i));
+//        TF1 f("f", fObj, XLOW_CHANNEL, XUP_CHANNEL, 0);
+//        fs.push_back(f);
+//    }
+
+//    std::vector<std::function<void()>> tasks;
+//    for (size_t i{0}; i < histsSg.size(); ++i)
+//    {
+//        for (size_t j{0}; j <  histsSg.at(i).size(); ++j)
+//        {
+//            tasks.push_back([this, i, j, &histsSg, &histsBg, &fs] () {
+//                auto sE{selectedEvents(static_cast<u_int8_t>(i), static_cast<u_int8_t>(j))};
+//                auto tSgMin{_timePeaksFinder.get()->timePeaksPos().at(i).at(j) - 3.0};
+//                auto tSgMax{_timePeaksFinder.get()->timePeaksPos().at(i).at(j) + 3.0};
+//                fillHistEnergy(sE, histsSg.at(i).at(j).get(), tSgMin, tSgMax, false, fs.at(i));
+//                auto tBgMin{_timePeaksFinder.get()->timePeaksPos().at(i).at(j) - 30.0};
+//                auto tBgMax{_timePeaksFinder.get()->timePeaksPos().at(i).at(j) - 20.0};
+//                fillHistEnergy(sE, histsBg.at(i).at(j).get(), tBgMin, tBgMax, false, fs.at(i));
+//            });
+//        }
+//    }
+
+//    func_async(tasks.begin(), tasks.end());
+
+//    tasks.clear();
+
+//    std::vector<std::shared_ptr<TH1>> histsSgGamma(_nGamma, nullptr);
+//    prepareHists("histSgGamma", BINS_ENERGY, XLOW_ENERGY, XUP_ENERGY, histsSgGamma);
+
+//    for (size_t i{0}; i < histsSg.size(); ++i)
+//    {
+//        for (size_t j{0}; j < histsSg.at(i).size(); ++j)
+//        {
+//            histsSgGamma.at(i).get()->Add(histsSg.at(i).at(j).get());
+//            histsSgGamma.at(i).get()->Add(histsBg.at(i).at(j).get(), -6.0 / 10.0);
+//        }
+//    }
+
+//    std::unique_ptr<TH1D> hist{new TH1D("hist", "hist", BINS_ENERGY, XLOW_ENERGY, XUP_ENERGY)};
+
+//    for (size_t i{0}; i < histsSg.size(); ++i)
+//    {
+//        hist.get()->Add(histsSgGamma.at(i).get());
+//    }
+
+//    const std::string outputFileName{"field5_r.root"};
+
+//    std::unique_ptr<TFile> file{TFile::Open((outputFileName).c_str(), "RECREATE")};
+//    if (file->IsOpen())
+//    {
+//        hist.get()->Write(hist.get()->GetName(), TObject::kOverwrite);
+//    }
 }

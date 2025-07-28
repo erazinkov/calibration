@@ -16,7 +16,7 @@ ChannelMap ChannelMap::mapNAP()
         {0, Channel(Channel::GAMMA, 0)},
         {1, Channel(Channel::GAMMA, 1)},
         {2, Channel(Channel::GAMMA, 2)},
-        {3, Channel(Channel::GAMMA, std::nullopt)},
+        {3, Channel(Channel::GAMMA, 3)},
         {4, Channel(Channel::GAMMA, 4)},
         {5, Channel(Channel::GAMMA, 5)},
         {6, Channel(Channel::UNKNOWN, 111)},
@@ -91,23 +91,6 @@ const std::map<u_int8_t, Channel> &ChannelMap::map() const
 
 std::optional<u_int8_t> ChannelMap::getIdxByHardwareIdx(u_int8_t &hardwareIndex)
 {
-//    auto it{std::find_if(_map.begin(), _map.end(), [&hardwareIndex](std::pair<u_int8_t, Channel> mapItem){
-//            return mapItem.second.index() == hardwareIndex && mapItem.second.type() != Channel::UNKNOWN;
-//        })};
-
-//    if (it != _map.end())
-//    {
-//        return it->second.index();
-//    }
-//    return std::nullopt;
-//    try
-//    {
-//        return _map.at(hardwareIndex).index();
-//    }
-//    catch (const std::out_of_range &)
-//    {
-//        return std::nullopt;
-//    }
     auto it{_map.find(hardwareIndex)};
     if (it != _map.end())
     {
