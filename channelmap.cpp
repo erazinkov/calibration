@@ -34,19 +34,6 @@ ChannelMap ChannelMap::mapNAP()
     return ChannelMap(map);
 }
 
-unsigned long ChannelMap::numberOfChannels(Channel::EChannelType type) const
-{
-    unsigned long number{};
-    auto it = _map.begin();
-
-    while ( (it = std::find_if(it, _map.end(), [&type](std::pair<u_int8_t, Channel> mapItem){return mapItem.second.type() == type;}) ) != _map.end())
-    {
-        ++number;
-        ++it;
-    }
-    return number;
-}
-
 std::vector<int> ChannelMap::getIdxsByType(Channel::EChannelType type) const
 {
     std::vector<int> idxs;

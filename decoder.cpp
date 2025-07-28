@@ -34,7 +34,7 @@ void Decoder::process()
     u_int32_t size{static_cast<u_int32_t>(ifs_.tellg())};
     ifs_.seekg(0);
 
-    auto number{_map.numberOfChannels(Channel::ALPHA) + _map.numberOfChannels(Channel::GAMMA)};
+    auto number{_map.getIdxsByType(Channel::ALPHA).size() + _map.getIdxsByType(Channel::GAMMA).size()};
     counters_.rawhits.resize(number);
 
     events_.clear();
