@@ -19,17 +19,21 @@
 void process(const std::string fileName)
 {
     const auto pre = ChannelMap::mapNAP();
-    auto start = std::chrono::steady_clock::now();
+//    auto start = std::chrono::steady_clock::now();
     Decoder decoder(fileName, pre);
 
     auto r = decoder.events();
-    auto stop = std::chrono::steady_clock::now();
-    std::cout << "Time elapsed, ms: " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << std::endl;
+//    auto stop = std::chrono::steady_clock::now();
+//    std::cout << "Time elapsed, ms: " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << std::endl;
     if (!r.empty())
     {
         std::cout << "Events: " << r.size() << std::endl;
         Calibration calibration(pre, r);
     }
+}
+
+void a(int b) {
+
 }
 
 int main(int argc, char *argv[])
