@@ -42,4 +42,5 @@ HEADERS += \
     polynomialfunction.h \
     progressbar.h \
     spinner.h \
-    timepeaksfinder.h
+    timepeaksfinder.h \
+    utils.h

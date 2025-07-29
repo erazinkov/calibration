@@ -39,7 +39,7 @@ private:
 
     std::vector<dec_ev_t> selectedEvents(uint8_t idxGamma, u_int8_t idxAlpha);
 
-    void fillHistTime(const std::vector<dec_ev_t> &, TH1 *, double);
+    void fillHistTime(const std::vector<dec_ev_t> &events, TH1 *h, double);
     void fillHistChannel(const std::vector<dec_ev_t> &events, TH1 *h, double min, double max, bool exclude);
     void fillHistEnergy(const std::vector<dec_ev_t> &events, TH1 *h, double min, double max, bool exclude, TF1 f);
 
@@ -64,27 +64,7 @@ private:
     std::vector<int> _idxsGamma;
     std::vector<int> _idxsAlpha;
 
-    template<typename Iterator>
-    static void func_async(Iterator first, Iterator last)
-    {
-        unsigned long const length{static_cast<unsigned long const>(std::distance(first, last))};
-        unsigned long const max_chunk_size{8};
-        if (length < max_chunk_size)
-        {
-            for (auto it{first}; it != last; ++it)
-            {
-                (*it)();
-            }
-        }
-        else
-        {
-            Iterator mid_point{first};
-            std::advance(mid_point, length / 2);
-            std::future<void> first_half = std::async(func_async<Iterator>, first, mid_point);
-            func_async(mid_point, last);
-            first_half.get();
-        }
-    }
+
 };
 
 #endif // CALIBRATION_H

@@ -13,6 +13,7 @@
 
 #include <sstream>
 
+#include "utils.h"
 
 Calibration::Calibration(const ChannelMap &map, std::vector<dec_ev_t> &events) : _map(map), _events(events)
 {
