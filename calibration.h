@@ -12,6 +12,7 @@
 
 #include "timepeaksfinder.h"
 #include "energypeak.h"
+#include "histogrammanager.h"
 
 class Calibration
 {
@@ -34,6 +35,7 @@ public:
 
 private:
     std::unique_ptr<TimePeaksFinder> _timePeaksFinder;
+    std::unique_ptr<HistogramManager> _histogramManager;
     const ChannelMap _map;
     const std::vector<dec_ev_t> _events;
 
@@ -43,18 +45,6 @@ private:
     void fillHistChannel(const std::vector<dec_ev_t> &events, TH1 *h, double min, double max, bool exclude);
     void fillHistEnergy(const std::vector<dec_ev_t> &events, TH1 *h, double min, double max, bool exclude, TF1 f);
 
-    void drawHistsToFile(const std::string &psName, const std::vector<std::vector<std::shared_ptr<TH1>> > &hists) const;
-    std::vector<std::vector<std::shared_ptr<TH1>>> prepareHists(const std::string &histName,
-                                                                int nBinsX,
-                                                                double xLow,
-                                                                double xUp,
-                                                                std::vector<int> &idxsGamma,
-                                                                std::vector<int> &idxsAlpha);
-    std::vector<std::shared_ptr<TH1>> prepareHists(const std::string &histName,
-                                                                int nBinsX,
-                                                                double xLow,
-                                                                double xUp,
-                                                                std::vector<int> &idxs);
     void processTime();
     void processGammaCh();
     void processGammaEnergy();

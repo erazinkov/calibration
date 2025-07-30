@@ -15,6 +15,7 @@ SOURCES += \
         channelmap.cpp \
         decoder.cpp \
         energypeak.cpp \
+        histogrammanager.cpp \
         main.cpp \
         peakfinder.cpp \
         piecewiselinearfunction.cpp \
@@ -37,6 +38,7 @@ HEADERS += \
     channelmap.h \
     decoder.h \
     energypeak.h \
+    histogrammanager.h \
     peakfinder.h \
     piecewiselinearfunction.h \
     polynomialfunction.h \
