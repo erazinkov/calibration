@@ -36,7 +36,7 @@ void Calibration::process()
 //    processTimeStamp();
     processTime();
     processGammaCh();
-    processGammaEnergy();
+//    processGammaEnergy();
 }
 
 std::vector<dec_ev_t> Calibration::selectedEvents(uint8_t idxGamma, u_int8_t idxAlpha)
@@ -130,10 +130,19 @@ void Calibration::processTime()
     auto stop = std::chrono::steady_clock::now();
     std::cout << "Time elapsed, ms: " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << std::endl;
 
-    _timePeaksFinder.get()->calculatePeaksPos(hists);
+//    _timePeaksFinder.get()->calculatePeaksPos(hists);
 
-    _histogramManager->printToPsFile("time", hists);
-    _histogramManager->printToPsFile("time_1", hists.at(0).at(0));
+    auto histsPo{_histogramManager->createHistograms("histTimePo", BINS_TIME, XLOW_TIME, XUP_TIME, _idxsGamma)};
+    for (size_t i{0}; i < hists.size(); ++i)
+    {
+        for (size_t j{0}; j <  hists.at(i).size(); ++j)
+        {
+            histsPo.at(i).get()->Add(hists.at(i).at(j).get());
+        }
+    }
+    _histogramManager->printToPsFile("timePoGamma", histsPo);
+//    _histogramManager->printToPsFile("time", hists);
+//    _histogramManager->printToPsFile("time_1", hists.at(0).at(0));
 
 }
 

@@ -23,6 +23,8 @@ public:
                                                                 std::vector<int> &idxs) const;
     void printToPsFile(const std::string &psName,
                std::vector<std::vector<std::shared_ptr<TH1>> > &hists) const;
+    void printToPsFile(const std::string &fileName,
+                                 std::vector<std::shared_ptr<TH1> > &hists) const;
     void printToPsFile(const std::string &psName,
                std::shared_ptr<TH1> hist) const;
     void saveToRootFile(const std::string &fileName,

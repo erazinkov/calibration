@@ -34,6 +34,31 @@ ChannelMap ChannelMap::mapNAP()
     return ChannelMap(map);
 }
 
+ChannelMap ChannelMap::mapTMP()
+{
+    std::map<u_int8_t, Channel> map
+    {
+        {0, Channel(Channel::GAMMA, 0)},
+        {1, Channel(Channel::GAMMA, 1)},
+        {2, Channel(Channel::GAMMA, 2)},
+        {3, Channel(Channel::GAMMA, 3)},
+        {4, Channel(Channel::GAMMA, 4)},
+        {5, Channel(Channel::GAMMA, 5)},
+        {6, Channel(Channel::GAMMA, 6)},
+        {7, Channel(Channel::GAMMA, 7)},
+        {8, Channel(Channel::ALPHA, 0)},
+        {9, Channel(Channel::ALPHA, 1)},
+        {10, Channel(Channel::ALPHA, 2)},
+        {11, Channel(Channel::ALPHA, 3)},
+        {12, Channel(Channel::ALPHA, 4)},
+        {13, Channel(Channel::ALPHA, 5)},
+        {14, Channel(Channel::ALPHA, 6)},
+        {15, Channel(Channel::ALPHA, 7)},
+    };
+
+    return ChannelMap(map);
+}
+
 std::vector<int> ChannelMap::getIdxsByType(Channel::EChannelType type) const
 {
     std::vector<int> idxs;

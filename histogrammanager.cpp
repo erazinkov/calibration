@@ -2,6 +2,8 @@
 
 #include <sstream>
 
+#include <iostream>
+
 #include <TCanvas.h>
 #include <TError.h>
 #include <TFile.h>
@@ -55,6 +57,27 @@ std::vector<std::shared_ptr<TH1> > HistogramManager::createHistograms(const std:
 }
 
 void HistogramManager::printToPsFile(const std::string &fileName,
+                             std::vector<std::shared_ptr<TH1> > &hists) const
+{
+    const std::string psName{(_outputDirectory.has_value() ? (_outputDirectory.value() + "/") : " ") + fileName + ".ps"};
+    gErrorIgnoreLevel = 3'000;
+    std::unique_ptr<TCanvas> c{new TCanvas("c", "c", 1024, 960)};
+    c.get()->Print((psName + '[').c_str());
+    for (size_t ig{0}; ig < hists.size(); ++ig)
+    {
+        hists.at(ig).get()->Draw();
+        auto listOfFunctions{hists.at(ig).get()->GetListOfFunctions()};
+        for (auto *item : *listOfFunctions)
+        {
+            item->DrawClone("SAME");
+        }
+        c.get()->Print(psName.c_str());
+    }
+    c.get()->Print((psName + ']').c_str());
+    gErrorIgnoreLevel = 0;
+}
+
+void HistogramManager::printToPsFile(const std::string &fileName,
                              std::vector<std::vector<std::shared_ptr<TH1> > > &hists) const
 {
     const std::string psName{(_outputDirectory.has_value() ? (_outputDirectory.value() + "/") : " ") + fileName + ".ps"};
@@ -68,11 +91,11 @@ void HistogramManager::printToPsFile(const std::string &fileName,
         for (size_t ia{0}; ia <  hists.at(ig).size(); ++ia)
         {
             c.get()->cd(static_cast<int>(ia) + 1);
-            hists.at(ig).at(ia).get()->Draw();
+            hists.at(ig).at(ia).get()->DrawClone();
             auto listOfFunctions{hists.at(ig).at(ia).get()->GetListOfFunctions()};
             for (auto *item : *listOfFunctions)
             {
-                item->Draw("SAME");
+                item->DrawClone("SAME");
             }
         }
         c.get()->Print(psName.c_str());
@@ -81,6 +104,34 @@ void HistogramManager::printToPsFile(const std::string &fileName,
     c.get()->Print((psName + ']').c_str());
     gErrorIgnoreLevel = 0;
 }
+
+//void HistogramManager::printToPsFile(const std::string &fileName,
+//                             std::vector<std::vector<std::shared_ptr<TH1> > > &hists) const
+//{
+//    const std::string psName{(_outputDirectory.has_value() ? (_outputDirectory.value() + "/") : " ") + fileName + ".ps"};
+//    gErrorIgnoreLevel = 3'000;
+//    std::unique_ptr<TCanvas> c{new TCanvas("c", "c", 1024, 960)};
+//    c.get()->Print((psName + '[').c_str());
+//    for (size_t ig{0}; ig < hists.size(); ++ig)
+//    {
+//        auto cd{static_cast<int>(std::ceil(std::sqrt(hists.at(ig).size())))};
+//        c.get()->Divide(cd, cd);
+//        for (size_t ia{0}; ia <  hists.at(ig).size(); ++ia)
+//        {
+//            c.get()->cd(static_cast<int>(ia) + 1);
+//            hists.at(ig).at(ia).get()->Draw();
+//            auto listOfFunctions{hists.at(ig).at(ia).get()->GetListOfFunctions()};
+//            for (auto *item : *listOfFunctions)
+//            {
+//                item->Draw("SAME");
+//            }
+//        }
+//        c.get()->Print(psName.c_str());
+//        c.get()->Clear();
+//    }
+//    c.get()->Print((psName + ']').c_str());
+//    gErrorIgnoreLevel = 0;
+//}
 
 void HistogramManager::printToPsFile(const std::string &fileName, std::shared_ptr<TH1> hist) const
 {
