@@ -69,7 +69,7 @@ void HistogramManager::printToPsFile(const std::string &fileName,
         auto listOfFunctions{hists.at(ig).get()->GetListOfFunctions()};
         for (auto *item : *listOfFunctions)
         {
-            item->DrawClone("SAME");
+            item->Draw("SAME");
         }
         c.get()->Print(psName.c_str());
     }

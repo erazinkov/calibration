@@ -1,3 +1,9 @@
 
 calibration.pro.user
 calibration.pro.user
+*.ps
+*.stash
+*.idx
+*.json
+*.png
+/build
