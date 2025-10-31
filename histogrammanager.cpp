@@ -91,17 +91,18 @@ void HistogramManager::printToPsFile(const std::string &fileName,
         for (size_t ia{0}; ia <  hists.at(ig).size(); ++ia)
         {
             c.get()->cd(static_cast<int>(ia) + 1);
-            hists.at(ig).at(ia).get()->DrawClone();
+            hists.at(ig).at(ia).get()->Draw();
             auto listOfFunctions{hists.at(ig).at(ia).get()->GetListOfFunctions()};
             for (auto *item : *listOfFunctions)
             {
-                item->DrawClone("SAME");
+                item->Draw("SAME");
             }
         }
         c.get()->Print(psName.c_str());
         c.get()->Clear();
     }
     c.get()->Print((psName + ']').c_str());
+    c.get()->Delete();
     gErrorIgnoreLevel = 0;
 }
 

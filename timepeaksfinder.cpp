@@ -134,7 +134,8 @@ double TimePeaksFinder::calculatePeakPos(TH1 *hist)
     hist->GetListOfFunctions()->Add(fB);
     hist->GetListOfFunctions()->Add(fSn);
 
-    timePeakPos = f->GetParameter(1);
+//    timePeakPos = f->GetParameter(1);
+    timePeakPos = xMax;
 
     delete f;
     f = nullptr;

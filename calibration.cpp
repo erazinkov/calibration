@@ -132,16 +132,41 @@ void Calibration::processTime()
 
    _timePeaksFinder.get()->calculatePeaksPos(hists);
 
-    // auto histsPo{_histogramManager->createHistograms("histTimePo", BINS_TIME, XLOW_TIME, XUP_TIME, _idxsAlpha)};
-    // for (size_t i{0}; i < hists.size(); ++i)
-    // {
-    //     for (size_t j{0}; j <  hists.at(i).size(); ++j)
-    //     {
-    //         histsPo.at(j).get()->Add(hists.at(i).at(j).get());
-    //     }
-    // }
-    // _histogramManager->printToPsFile("timePoGamma", histsPo);
-//    _histogramManager->printToPsFile("time", hists);
+   auto hists_{_histogramManager->createHistograms("histTimeU", BINS_TIME, XLOW_TIME, XUP_TIME, _idxsGamma, _idxsAlpha)};
+
+   for (size_t i{0}; i < hists_.size(); ++i)
+   {
+       for (size_t j{0}; j <  hists_.at(i).size(); ++j)
+       {
+           tasks.push_back([this, &hists_, i, j](){
+               auto sE{selectedEvents(static_cast<u_int8_t>(_idxsGamma.at(i)), static_cast<u_int8_t>(_idxsAlpha.at(j)))};
+               fillHistTime(sE, hists_.at(i).at(j).get(), _timePeaksFinder.get()->timePeaksPos().at(i).at(j));
+           });
+       }
+   }
+   func_async(tasks.begin(), tasks.end());
+   tasks.clear();
+
+   auto histsTimeAlpha{_histogramManager->createHistograms("histTimeAlpha", BINS_TIME, XLOW_TIME, XUP_TIME, _idxsAlpha)};
+   for (size_t i{0}; i < hists_.size(); ++i)
+   {
+       for (size_t j{0}; j <  hists_.at(i).size(); ++j)
+       {
+           histsTimeAlpha.at(j).get()->Add(hists_.at(i).at(j).get());
+       }
+   }
+   const std::string outputFileName{"output_time.root"};
+   std::unique_ptr<TFile> file{TFile::Open((outputFileName).c_str(), "RECREATE")};
+   if (file->IsOpen())
+   {
+       for (auto &item : histsTimeAlpha)
+       {
+           item.get()->Write(item.get()->GetName(), TObject::kOverwrite);
+       }
+   }
+
+    _histogramManager->printToPsFile("time", hists);
+    _histogramManager->printToPsFile("timeAlpha", histsTimeAlpha);
 //    _histogramManager->printToPsFile("time_1", hists.at(0).at(0));
 
 }
@@ -252,6 +277,7 @@ void Calibration::processGammaEnergy()
             histsSgAlpha.at(j).get()->Add(histsBg.at(i).at(j).get(), -6.0 / 10.0);
         }
     }
+    _histogramManager->printToPsFile("eSgGamma", histsSgGamma);
     // _histogramManager->saveToRootFile("output", hist);
    const std::string outputFileName{"output.root"};
 
@@ -262,6 +288,6 @@ void Calibration::processGammaEnergy()
        {
            item.get()->Write(item.get()->GetName(), TObject::kOverwrite);
        }
-
+       hist.get()->Write(hist.get()->GetName(), TObject::kOverwrite);
    }
 }

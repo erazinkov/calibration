@@ -63,7 +63,8 @@ int main(int argc, char *argv[])
 //    process("/home/egor/shares/tmp/jun16-16.27.36");
 //      process("/home/egor/shares/tmp/phantom_3_20cm_1");
 //process("/home/egor/shares/tmp/std_lenta_check_1");
-    process("/home/egor/Downloads/c12_1");
+//    process("/home/egor/shares/agpc/tmp/c12_1");
+    process("/home/egor/shares/agpc/tmp/emptiness");
 //    process("/home/egor/shares/tmp/kp_static_1"); // file with bad block
     auto stop = std::chrono::steady_clock::now();
     std::cout << "Time elapsed, ms: " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << std::endl;
