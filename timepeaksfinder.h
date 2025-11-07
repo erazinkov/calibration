@@ -15,6 +15,8 @@ public:
     void calculatePeaksPos(std::vector<std::vector<TH1 *>> hists);
     void calculatePeaksPos(std::vector<std::vector<std::shared_ptr<TH1>> > &hists);
     const std::vector<std::vector<double> > &timePeaksPos() const;
+    void writePeaksPosToFile(const std::string &fileName);
+    void readPeaksPosFromFile(const std::string &fileName);
 
 private:
     std::vector<std::vector<double>> _timePeaksPos;

@@ -6,7 +6,7 @@
 #include "progressbar.h"
 
 Decoder::Decoder(const std::string &fileName, const ChannelMap &pre)
-    : fileName_{fileName} , _map{pre}
+    : fileName_{fileName} , map_{pre}
 {
     process();
 }
@@ -31,11 +31,11 @@ void Decoder::process()
     }
 
     ifs_.seekg(0, std::ios::end);
-    u_int32_t size{static_cast<u_int32_t>(ifs_.tellg())};
+    u_int64_t size{static_cast<u_int64_t>(ifs_.tellg())};
     ifs_.seekg(0);
 
-    auto number{_map.getIdxsByType(Channel::ALPHA).size() + _map.getIdxsByType(Channel::GAMMA).size()};
-    counters_.rawhits.resize(number);
+    auto number{map_.getIdxsByType(Channel::ALPHA).size() + map_.getIdxsByType(Channel::GAMMA).size()};
+    counters_.rawhits.resize(map_.map().size());
 
     events_.clear();
 
@@ -45,7 +45,7 @@ void Decoder::process()
     adcm_counters_t counters;
 
     auto c{false};
-    u_int32_t currentPosition{0};
+    u_int64_t currentPosition{0};
     double prevTs{0};
 
     auto isIntegerOverflow = [](double currentTs, double prevTs, double limit = 3'000'000'000){
@@ -59,11 +59,11 @@ void Decoder::process()
         {
             currentPosition = static_cast<u_int32_t>(ifs_.tellg());
             ifs_ >> cmap;
-            c = _map.isCorrect(cmap.map);
+            c = map_.isCorrect(cmap.map);
             if (c)
             {
                 currentPosition -= sizeof(stor_packet_hdr_t);
-                ProgressBar<u_int32_t>::show(currentPosition, size);
+                ProgressBar<u_int64_t>::show(currentPosition, size);
             }
             continue;
         }
@@ -88,8 +88,8 @@ void Decoder::process()
             ifs_ >> *g >> *a;
 
 
-            auto idxGamma{_map.getIdxByHardwareIdx(g->ch)};
-            auto idxAlpha{_map.getIdxByHardwareIdx(a->ch)};
+            auto idxGamma{map_.getIdxByHardwareIdx(g->ch)};
+            auto idxAlpha{map_.getIdxByHardwareIdx(a->ch)};
             if (idxGamma.has_value() && idxAlpha.has_value())
             {
                 dec_ev_t event;
@@ -141,6 +141,16 @@ void Decoder::process()
             if (!counters.n)
             {
                 continue;
+            }
+            for (size_t i{0}; i < map_.map().size(); ++i)
+            {
+                auto idx{map_.map().at(i).index()};
+                auto type{map_.map().at(i).type()};
+                if (type == Channel::UNKNOWN)
+                {
+                    continue;
+                }
+                counters_.rawhits.at(i) += counters.rawhits.at(i);
             }
 //            for (size_t i{0}; i < _map.map().size(); ++i)
 //            {

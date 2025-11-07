@@ -24,6 +24,13 @@ void process(const std::string fileName)
     Decoder decoder(fileName, pre);
 
     auto r = decoder.events();
+    auto c = decoder.counters();
+
+    for (const auto &item : c.rawhits)
+    {
+        std::cout << item << " ";
+    }
+    std::cout << c.time << std::endl;
 //    auto stop = std::chrono::steady_clock::now();
 //    std::cout << "Time elapsed, ms: " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << std::endl;
     if (!r.empty())
@@ -64,8 +71,22 @@ int main(int argc, char *argv[])
 //      process("/home/egor/shares/tmp/phantom_3_20cm_1");
 //process("/home/egor/shares/tmp/std_lenta_check_1");
 //    process("/home/egor/shares/agpc/tmp/c12_1");
-    process("/home/egor/shares/agpc/tmp/emptiness");
+//    process("/home/egor/shares/tmp/c12_new");
+//    process("/home/egor/shares/tmp/emptyness_new");
+//    process("/home/egor/shares/tmp/c12_bez_verhnej_zaschity");
+//    process("/home/egor/shares/tmp/c12_bez_nijnej_zaschity");
+//    process("/home/egor/shares/tmp/emptiness_bez_nijnej_zaschity");
+//    process("/home/egor/shares/tmp/emptiness_bez_nijnej_zaschity_plus_c12_na_ng");
+//    process("/home/egor/shares/tmp/emptiness_bez_nijnej_zaschity_razdvinuli_bgo_na_2cm");
+//    process("/home/egor/shares/tmp/emptiness_bez_nijnej_zaschity_bez_samoj_verhnej");
+//    process("/home/egor/shares/tmp/agpf_pustota_old/pustota_1");
+//    process("/home/egor/shares/tmp/agpf_pustota_old/sahar_1");
+//    process("/home/egor/shares/tmp/agpf_pustota_old/mask_c12_new3");
+//    process("/home/egor/shares/agpc/tmp/emptiness");
 //    process("/home/egor/shares/tmp/kp_static_1"); // file with bad block
+//    process("/home/egor/shares/tmp/sugar_emptiness_1");
+//    process("/home/egor/shares/tmp/emptiness_1");
+    process("/home/egor/shares/tmp/c12_2kg_mask_1");
     auto stop = std::chrono::steady_clock::now();
     std::cout << "Time elapsed, ms: " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << std::endl;
 

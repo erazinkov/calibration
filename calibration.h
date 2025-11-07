@@ -35,6 +35,7 @@ public:
 
 private:
     std::unique_ptr<TimePeaksFinder> _timePeaksFinder;
+    std::unique_ptr<TimePeaksFinder> timePeaksFinder_;
     std::unique_ptr<HistogramManager> _histogramManager;
     const ChannelMap _map;
     const std::vector<dec_ev_t> _events;
@@ -42,10 +43,20 @@ private:
     std::vector<dec_ev_t> selectedEvents(uint8_t idxGamma, u_int8_t idxAlpha);
 
     void fillHistTime(const std::vector<dec_ev_t> &events, TH1 *h, double);
-    void fillHistChannel(const std::vector<dec_ev_t> &events, TH1 *h, double min, double max, bool exclude);
-    void fillHistEnergy(const std::vector<dec_ev_t> &events, TH1 *h, double min, double max, bool exclude, TF1 f);
+
+    void fillHistTimeWithEnergyCut(const std::vector<dec_ev_t> &events,
+                                                TH1 *h,
+                                                double offsetT,
+                                                double minE,
+                                                double maxE,
+                                                bool exclude,
+                                                TF1 f);
+
+    void fillHistChannel(const std::vector<dec_ev_t> &events, TH1 *h, double minT, double maxT, bool exclude);
+    void fillHistEnergy(const std::vector<dec_ev_t> &events, TH1 *h, double minT, double maxT, bool exclude, TF1 f);
 
     void processTime();
+    void processTimeWithEnergyCut();
     void processGammaCh();
     void processGammaEnergy();
 

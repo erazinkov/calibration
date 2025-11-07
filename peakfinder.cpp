@@ -3,6 +3,7 @@
 #include <TF1.h>
 #include <TGraphErrors.h>
 #include <TCanvas.h>
+#include <TLine.h>
 #include <TVirtualFitter.h>
 
 PeakFinder::PeakFinder(const ChannelMap &map) : _calib{1.0}, _offset{0.0}
@@ -28,7 +29,7 @@ void PeakFinder::process(std::vector<std::shared_ptr<TH1>> &histsSg, std::vector
         auto fe1238Pos{getFerrum1238Pos(histsRc.at(i).get())};
         _energyPeaks.at(i).push_back(EnergyPeak(EnergyPeak::Id::FE1238, fe1238Pos));
         graphPolN.SetPoint(1, fe1238Pos, 1238.0);
-        _calib  = (1238.0 - _offset) / fe1238Pos;
+
         auto hydPos{getHydrogenPos(histsRc.at(i).get())};
         _energyPeaks.at(i).push_back(EnergyPeak(EnergyPeak::Id::HYDROGEN, hydPos));
         graphPolN.SetPoint(2, hydPos, 2223.0);
@@ -36,7 +37,7 @@ void PeakFinder::process(std::vector<std::shared_ptr<TH1>> &histsSg, std::vector
 
         TF1 fApp("fApp", "pol2", 0.0, 8.0e3);
         graphPolN.Fit(&fApp, "RQ0");
-        auto carbonPos{getCarbonPos(histsSg.at(i).get(), fApp.GetX(4438.0) - 25)};
+        auto carbonPos{getCarbonPos(histsSg.at(i).get(), fApp.GetX(4438.0))};
         _energyPeaks.at(i).push_back(EnergyPeak(EnergyPeak::Id::CARBON, carbonPos));
         graphPolN.SetPoint(3, carbonPos, 4438.0);
         _calib  = (4438.0 - _offset) / carbonPos;
@@ -165,12 +166,12 @@ double PeakFinder::getFerrum1238Pos(TH1 *h)
 double PeakFinder::getHydrogenPos(TH1 *h)
 {
 
-    double posE{2223}, dLe{220}, dRe{190};
+    double posE{2223}, dLe{220}, dRe{210};
 
     TF1 f("f","gaus(0)+pol1(3)", getCh(posE-dLe), getCh(posE+dRe));
-    f.SetParameters(3000,getCh(posE),getdCh(80),1000,0);
+    f.SetParameters(1000,getCh(posE),getdCh(80),1000,0);
     f.SetParLimits(0,0,1.0e5);
-    f.SetParLimits(1,getCh(posE-100),getCh(posE+100));
+    f.SetParLimits(1,getCh(posE-220),getCh(posE+210));
     f.SetParLimits(2,getdCh(50.),getdCh(120.));
     h->Fit(&f,"RQN0");
 
@@ -193,24 +194,28 @@ double PeakFinder::getHydrogenPos(TH1 *h)
     };
 
 
-    TF1 f1("f1", ff, f.GetParameter(1) - getdCh(dLe), f.GetParameter(1) + getdCh(dRe), 6);
+    TF1 *f1 = new TF1("f1", ff, f.GetParameter(1) - getdCh(dLe), f.GetParameter(1) + getdCh(dRe), 6);
 
+    f1->SetParameter(0,f.GetParameter(0));
+    f1->SetParameter(1,f.GetParameter(1));
+    f1->SetParameter(2,f.GetParameter(2));
+    f1->SetParameter(3,0.1);
+    f1->SetParameter(4,f.GetParameter(3));
+    f1->SetParameter(5,f.GetParameter(4));
+    f1->SetParLimits(0,0,1.0e5);
+    f1->SetParLimits(1,f.GetParameter(1)-getdCh(dLe),f.GetParameter(1)+getdCh(dRe));
+    f1->SetParLimits(2,getdCh(40.),getdCh(100.));
+    f1->SetParLimits(3,0.01,0.2);
+    f1->SetParLimits(4,0.,1.0e5);
+    f1->SetParLimits(5,-100.,0.);
+    h->Fit(f1,"RQN0");
 
-    f1.SetParameter(0,f.GetParameter(0));
-    f1.SetParameter(1,f.GetParameter(1));
-    f1.SetParameter(2,f.GetParameter(2));
-    f1.SetParameter(3,0.1);
-    f1.SetParameter(4,  f.GetParameter(3));
-    f1.SetParameter(5,f.GetParameter(4));
-    f1.SetParLimits(0,0,1.0e5);
-    f1.SetParLimits(1,f.GetParameter(1)-getdCh(dLe),f.GetParameter(1)+getdCh(dRe));
-    f1.SetParLimits(2,getdCh(40.),getdCh(100.));
-    f1.SetParLimits(3,0.01,0.2);
-    f1.SetParLimits(4,0.,1.0e5);
-    f1.SetParLimits(5,-100.,0.);
-    h->Fit(&f1,"RQN0");
+    TLine *l = new TLine(getCh(posE), h->GetMinimum(), getCh(posE), h->GetMaximum());
 
-    return f1.GetParameter(1);
+    h->GetListOfFunctions()->Add(l);
+    h->GetListOfFunctions()->Add(f1);
+
+    return f1->GetParameter(1);
 }
 
 double PeakFinder::getCarbonPos(TH1 *h, double appPos)
@@ -218,18 +223,22 @@ double PeakFinder::getCarbonPos(TH1 *h, double appPos)
     double pos{appPos};
     double dL{150};
 //    double dR{150};
-    TF1 f("f", "gaus(0) + pol2(3)", pos - dL * 0.5, pos + dL);
+    TF1 *f{new TF1("f", "gaus(0) + pol2(3)", pos - dL * 0.5, pos + dL)};
     double amp{h->GetBinContent(h->GetXaxis()->FindBin(pos)) - h->GetBinContent(h->GetXaxis()->FindBin(pos + dL))};
 
-    f.SetParameters(amp, pos, dL * 0.25, 0.0, 0.0, 0.0);
-    f.SetParLimits(0, 0.0, 1.0e5);
-    f.SetParLimits(1, pos - dL * 0.5, pos + dL * 0.5);
-    f.SetParLimits(2, dL * 0.05, dL);
-    f.SetParLimits(3, 0.0, h->GetBinContent(h->GetXaxis()->FindBin(pos)));
-    f.SetParLimits(4, 0.0, -1.0 * DBL_MAX);
-    h->Fit("f", "RQN0");
+    f->SetParameters(amp, pos, dL * 0.25, 0.0, 0.0, 0.0);
+    f->SetParLimits(0, 0.0, 1.0e5);
+    f->SetParLimits(1, pos - dL * 0.5, pos + dL * 0.5);
+    f->SetParLimits(2, dL * 0.05, dL);
+    f->SetParLimits(3, 0.0, h->GetBinContent(h->GetXaxis()->FindBin(pos)));
+    f->SetParLimits(4, 0.0, -1.0 * DBL_MAX);
+    h->Fit(f, "RQN0");
 
-    return f.GetParameter(1);
+    TLine *l = new TLine(pos, h->GetMinimum(), pos, h->GetMaximum());
+    h->GetListOfFunctions()->Add(l);
+    h->GetListOfFunctions()->Add(f);
+
+    return f->GetParameter(1);
 }
 
 double PeakFinder::getOxygenPos(TH1 *h, double appPos)

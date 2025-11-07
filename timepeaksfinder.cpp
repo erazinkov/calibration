@@ -3,6 +3,10 @@
 #include <TF1.h>
 #include <TList.h>
 
+#include <fstream>
+#include <iostream>
+#include <sstream>
+
 TimePeaksFinder::TimePeaksFinder(const ChannelMap &map)
 {
     _timePeaksPos.resize(map.getIdxsByType(Channel::GAMMA).size());
@@ -15,6 +19,52 @@ TimePeaksFinder::TimePeaksFinder(const ChannelMap &map)
 const std::vector<std::vector<double> > &TimePeaksFinder::timePeaksPos() const
 {
     return _timePeaksPos;
+}
+
+void TimePeaksFinder::writePeaksPosToFile(const std::string &fileName)
+{
+    std::ofstream ofs(fileName);
+    if (ofs.is_open())
+    {
+        for (size_t ig{0}; ig < _timePeaksPos.size(); ++ig)
+        {
+            for (size_t ia{0}; ia <  _timePeaksPos.at(ig).size(); ++ia)
+            {
+                ofs << _timePeaksPos.at(ig).at(ia) << " ";
+            }
+            ofs << std::endl;
+        }
+        ofs.close();
+    }
+    else
+    {
+        std::cerr << "Can't open file " << fileName << std::endl;
+    }
+}
+
+void TimePeaksFinder::readPeaksPosFromFile(const std::string &fileName)
+{
+    std::ifstream ifs(fileName);
+    if (ifs.is_open())
+    {
+        for (size_t ig{0}; ig < _timePeaksPos.size(); ++ig)
+        {
+            std::string line;
+            std::getline(ifs, line);
+            std::stringstream ss(line);
+            double t{0.0};
+            for (size_t ia{0}; ia <  _timePeaksPos.at(ig).size(); ++ia)
+            {
+                ss >> t;
+                _timePeaksPos.at(ig).at(ia) = t;
+            }
+        }
+        ifs.close();
+    }
+    else
+    {
+        std::cerr << "Can't open file " << fileName << std::endl;
+    }
 }
 
 void TimePeaksFinder::calculatePeaksPos(std::vector<std::vector<std::shared_ptr<TH1>> > &hists)
@@ -134,8 +184,8 @@ double TimePeaksFinder::calculatePeakPos(TH1 *hist)
     hist->GetListOfFunctions()->Add(fB);
     hist->GetListOfFunctions()->Add(fSn);
 
-//    timePeakPos = f->GetParameter(1);
-    timePeakPos = xMax;
+    timePeakPos = f->GetParameter(1);
+//    timePeakPos = xMax;
 
     delete f;
     f = nullptr;
