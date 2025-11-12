@@ -5,6 +5,7 @@
 #include <optional>
 
 #include <TH1.h>
+#include <TH2.h>
 
 class HistogramManager
 {
@@ -20,6 +21,23 @@ public:
                                                                 int nBinsX,
                                                                 double xLow,
                                                                 double xUp,
+                                                                std::vector<int> &idxs) const;
+    std::vector<std::vector<std::shared_ptr<TH2>>> createHistograms(const std::string &histName,
+                                                                int nBinsX,
+                                                                double xLow,
+                                                                double xUp,
+                                                                int nBinsY,
+                                                                double yLow,
+                                                                double yUp,
+                                                                std::vector<int> &idxsGamma,
+                                                                std::vector<int> &idxsAlpha) const;
+    std::vector<std::shared_ptr<TH2>> createHistograms(const std::string &histName,
+                                                                int nBinsX,
+                                                                double xLow,
+                                                                double xUp,
+                                                                int nBinsY,
+                                                                double yLow,
+                                                                double yUp,
                                                                 std::vector<int> &idxs) const;
     void printToPsFile(const std::string &psName,
                std::vector<std::vector<std::shared_ptr<TH1>> > &hists) const;

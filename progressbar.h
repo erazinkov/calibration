@@ -13,7 +13,7 @@ public:
     static void show(T current, T total)
     {
         const int width{50};
-        double progress{static_cast<double>(current) / static_cast<double>(total)};
+        double progress{static_cast<long double>(current) / static_cast<long double>(total)};
         int pos{static_cast<int>(width * progress)};
         int p{static_cast<int>(std::ceil(progress * 100.0))};
         std::cout << "[";

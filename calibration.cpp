@@ -20,7 +20,7 @@ Calibration::Calibration(const ChannelMap &map, std::vector<dec_ev_t> &events) :
     _idxsGamma = map.getIdxsByType(Channel::GAMMA);
     _idxsAlpha = map.getIdxsByType(Channel::ALPHA);
 
-    _timePeaksFinder = std::make_unique<TimePeaksFinder>(_map);
+    timePeaksFinder_ = std::make_unique<TimePeaksFinder>(_map);
     _histogramManager = std::make_unique<HistogramManager>();
 
     timePeaksFinder_ = std::make_unique<TimePeaksFinder>(_map);
@@ -38,7 +38,8 @@ void Calibration::process()
 //    processTimeStamp();
     processTime();
     processGammaCh();
-   processGammaEnergy();
+    processGammaEnergyTime();
+//   processGammaEnergy();
 //   processTimeWithEnergyCut();
 }
 
@@ -90,6 +91,16 @@ void Calibration::fillHistTimeWithEnergyCut(const std::vector<dec_ev_t> &events,
                 h->Fill(t - offsetT);
             }
         }
+    }
+}
+
+void Calibration::fillHistEnergyTime(const std::vector<dec_ev_t> &events, TH2 *h, double offsetT, TF1 f)
+{
+    for (const auto & item : events)
+    {
+        auto t{static_cast<double>(item.tdc)};
+        auto e{f.Eval(static_cast<double>(item.g.amp))};
+        h->Fill(e, t - offsetT);
     }
 }
 
@@ -162,15 +173,15 @@ void Calibration::processTime()
     auto stop = std::chrono::steady_clock::now();
     std::cout << "Time elapsed, ms: " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << std::endl;
 
-   _timePeaksFinder.get()->calculatePeaksPos(hists);
-//   _timePeaksFinder.get()->readPeaksPosFromFile("time_peak_pos_c_12_new.txt");
-//    _timePeaksFinder.get()->readPeaksPosFromFile("time_peak_pos_c12_bez_nijnej_zaschity.txt");
-//    _timePeaksFinder.get()->writePeaksPosToFile("time_peak_pos_c12_bez_nijnej_zaschity.txt");
+   timePeaksFinder_.get()->calculatePeaksPos(hists);
+//   timePeaksFinder_.get()->readPeaksPosFromFile("time_peak_pos_c_12_new.txt");
+//    timePeaksFinder_.get()->readPeaksPosFromFile("time_peak_pos_c12_bez_nijnej_zaschity.txt");
+//    timePeaksFinder_.get()->writePeaksPosToFile("time_peak_pos_c12_bez_nijnej_zaschity.txt");
 
-//   _timePeaksFinder.get()->readPeaksPosFromFile("time_peak_pos_c12_bez_nijnej_zaschity_w_energy_cut.txt");
-//   _timePeaksFinder.get()->writePeaksPosToFile("time_peak_pos_c12_bez_nijnej_zaschity_w_energy_cut_check.txt");
-//   _timePeaksFinder.get()->writePeaksPosToFile("time_peak_pos_sugar_emptiness_1.txt");
-//   _timePeaksFinder.get()->readPeaksPosFromFile("time_peak_pos_sugar_emptiness_1.txt");
+//   timePeaksFinder_.get()->readPeaksPosFromFile("time_peak_pos_c12_bez_nijnej_zaschity_w_energy_cut.txt");
+//   timePeaksFinder_.get()->writePeaksPosToFile("time_peak_pos_c12_bez_nijnej_zaschity_w_energy_cut_check.txt");
+//   timePeaksFinder_.get()->writePeaksPosToFile("time_peak_pos_sugar_emptiness_1.txt");
+//   timePeaksFinder_.get()->readPeaksPosFromFile("time_peak_pos_sugar_emptiness_1.txt");
 
    auto hists_{_histogramManager->createHistograms("histTimeU", BINS_TIME, XLOW_TIME, XUP_TIME, _idxsGamma, _idxsAlpha)};
 
@@ -180,7 +191,7 @@ void Calibration::processTime()
        {
            tasks.push_back([this, &hists_, i, j](){
                auto sE{selectedEvents(static_cast<u_int8_t>(_idxsGamma.at(i)), static_cast<u_int8_t>(_idxsAlpha.at(j)))};
-               fillHistTime(sE, hists_.at(i).at(j).get(), _timePeaksFinder.get()->timePeaksPos().at(i).at(j));
+               fillHistTime(sE, hists_.at(i).at(j).get(), timePeaksFinder_.get()->timePeaksPos().at(i).at(j));
            });
        }
    }
@@ -234,10 +245,10 @@ void Calibration::processTimeWithEnergyCut()
                 auto sE{selectedEvents(static_cast<u_int8_t>(_idxsGamma.at(i)), static_cast<u_int8_t>(_idxsAlpha.at(j)))};
                 fillHistTimeWithEnergyCut(sE,
                                           hists.at(i).at(j).get(),
-//                                          _timePeaksFinder.get()->timePeaksPos().at(i).at(j),
-                                          0.0,
-                                          4438.0 - 160.0,
-                                          4438.0 + 160.0,
+                                          timePeaksFinder_.get()->timePeaksPos().at(i).at(j),
+//                                          0.0,
+                                          4438.0 - 240.0,
+                                          4438.0 + 240.0,
                                           false,
                                           fs.at(i));
             });
@@ -249,8 +260,8 @@ void Calibration::processTimeWithEnergyCut()
     auto stop = std::chrono::steady_clock::now();
     std::cout << "Time elapsed, ms: " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << std::endl;
 
-   timePeaksFinder_.get()->calculatePeaksPos(hists);
-   timePeaksFinder_.get()->writePeaksPosToFile("time_peak_pos_c12_bez_nijnej_zaschity_w_energy_cut.txt");
+//   timePeaksFinder_.get()->calculatePeaksPos(hists);
+//   timePeaksFinder_.get()->writePeaksPosToFile("time_peak_pos_c12_bez_nijnej_zaschity_w_energy_cut.txt");
 
    auto histsTimeAlpha{_histogramManager->createHistograms("histTimeAlphaWithEnergyCut", BINS_TIME, XLOW_TIME, XUP_TIME, _idxsAlpha)};
    for (size_t i{0}; i < hists.size(); ++i)
@@ -260,7 +271,7 @@ void Calibration::processTimeWithEnergyCut()
            histsTimeAlpha.at(j).get()->Add(hists.at(i).at(j).get());
        }
    }
-   const std::string outputFileName{"output_time_c12_bez_nijnej_zaschity_w_energy_cut.root"};
+   const std::string outputFileName{"output_time_c12_2kg_mask_1_w_energy_cut.root"};
    std::unique_ptr<TFile> file{TFile::Open((outputFileName).c_str(), "RECREATE")};
    if (file->IsOpen())
    {
@@ -289,12 +300,12 @@ void Calibration::processGammaCh()
         {
             tasks.push_back([this, i, j, &histsSg, &histsBg, &histsRc] () {
                 auto sE{selectedEvents(static_cast<u_int8_t>(_idxsGamma.at(i)), static_cast<u_int8_t>(_idxsAlpha.at(j)))};
-                auto tSgMin{_timePeaksFinder.get()->timePeaksPos().at(i).at(j) - 3.0};
-                auto tSgMax{_timePeaksFinder.get()->timePeaksPos().at(i).at(j) + 3.0};
+                auto tSgMin{timePeaksFinder_.get()->timePeaksPos().at(i).at(j) - 3.0};
+                auto tSgMax{timePeaksFinder_.get()->timePeaksPos().at(i).at(j) + 3.0};
                 fillHistChannel(sE, histsSg.at(i).at(j).get(), tSgMin, tSgMax, false);
                 fillHistChannel(sE, histsRc.at(i).at(j).get(), tSgMin - 1.0, tSgMax + 1.0, true);
-                auto tBgMin{_timePeaksFinder.get()->timePeaksPos().at(i).at(j) - 30.0};
-                auto tBgMax{_timePeaksFinder.get()->timePeaksPos().at(i).at(j) - 20.0};
+                auto tBgMin{timePeaksFinder_.get()->timePeaksPos().at(i).at(j) - 30.0};
+                auto tBgMax{timePeaksFinder_.get()->timePeaksPos().at(i).at(j) - 20.0};
                 fillHistChannel(sE, histsBg.at(i).at(j).get(), tBgMin, tBgMax, false);
             });
         }
@@ -345,11 +356,11 @@ void Calibration::processGammaEnergy()
         {
             tasks.push_back([this, i, j, &histsSg, &histsBg, &fs] () {
                 auto sE{selectedEvents(static_cast<u_int8_t>(i), static_cast<u_int8_t>(j))};
-                auto tSgMin{_timePeaksFinder.get()->timePeaksPos().at(i).at(j) - 1.5};
-                auto tSgMax{_timePeaksFinder.get()->timePeaksPos().at(i).at(j) + 4.5};
+                auto tSgMin{timePeaksFinder_.get()->timePeaksPos().at(i).at(j) - 5.5};
+                auto tSgMax{timePeaksFinder_.get()->timePeaksPos().at(i).at(j) + 0.5};
                 fillHistEnergy(sE, histsSg.at(i).at(j).get(), tSgMin, tSgMax, false, fs.at(i));
-                auto tBgMin{_timePeaksFinder.get()->timePeaksPos().at(i).at(j) - 30.0};
-                auto tBgMax{_timePeaksFinder.get()->timePeaksPos().at(i).at(j) - 20.0};
+                auto tBgMin{timePeaksFinder_.get()->timePeaksPos().at(i).at(j) - 30.0};
+                auto tBgMax{timePeaksFinder_.get()->timePeaksPos().at(i).at(j) - 20.0};
                 fillHistEnergy(sE, histsBg.at(i).at(j).get(), tBgMin, tBgMax, false, fs.at(i));
             });
         }
@@ -399,4 +410,54 @@ void Calibration::processGammaEnergy()
        }
        hist.get()->Write(hist.get()->GetName(), TObject::kOverwrite);
    }
+}
+
+void Calibration::processGammaEnergyTime()
+{
+    auto hists(_histogramManager->createHistograms("histEnergyTime", BINS_ENERGY, XLOW_ENERGY, XUP_ENERGY, BINS_TIME, XLOW_TIME, XUP_TIME, _idxsGamma, _idxsAlpha));
+
+    std::vector<TF1> fs;
+    for (size_t i{0}; i < hists.size(); ++i)
+    {
+        PiecewiseLinearFunction fObj(_energyPeaks.at(i));
+        TF1 f("f", fObj, XLOW_CHANNEL, XUP_CHANNEL, 0);
+        fs.push_back(f);
+    }
+
+    std::vector<std::function<void()>> tasks;
+    for (size_t i{0}; i < hists.size(); ++i)
+    {
+        for (size_t j{0}; j <  hists.at(i).size(); ++j)
+        {
+            tasks.push_back([this, &hists, i, j, &fs](){
+                auto sE{selectedEvents(static_cast<u_int8_t>(_idxsGamma.at(i)), static_cast<u_int8_t>(_idxsAlpha.at(j)))};
+                fillHistEnergyTime(sE,
+                                   hists.at(i).at(j).get(),
+                                   timePeaksFinder_.get()->timePeaksPos().at(i).at(j),
+                                   fs.at(i));
+            });
+        }
+    }
+    func_async(tasks.begin(), tasks.end());
+    tasks.clear();
+
+    auto histsEnergyTimeAlpha{_histogramManager->createHistograms("histEnergyTimeAlpha", BINS_ENERGY, XLOW_ENERGY, XUP_ENERGY, BINS_TIME, XLOW_TIME, XUP_TIME, _idxsAlpha)};
+    for (size_t i{0}; i < hists.size(); ++i)
+    {
+        for (size_t j{0}; j <  hists.at(i).size(); ++j)
+        {
+            histsEnergyTimeAlpha.at(j).get()->Add(hists.at(i).at(j).get());
+        }
+    }
+    const std::string outputFileName{"output_et_c12_2kg_mask_1.root"};
+//    const std::string outputFileName{"output_et_emptiness_1.root"};
+//    const std::string outputFileName{"output_et_sio2_2kg_mask_1.root"};
+    std::unique_ptr<TFile> file{TFile::Open((outputFileName).c_str(), "RECREATE")};
+    if (file->IsOpen())
+    {
+        for (auto &item : histsEnergyTimeAlpha)
+        {
+            item.get()->Write(item.get()->GetName(), TObject::kOverwrite);
+        }
+    }
 }

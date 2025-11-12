@@ -17,7 +17,7 @@ void PeakFinder::process(std::vector<std::shared_ptr<TH1>> &histsSg, std::vector
 
     for (size_t i{0}; i < _energyPeaks.size(); ++i)
     {
-        TGraphErrors graphPolN(5);
+        TGraphErrors graphPolN(4);
         auto fe847PosApprox{getFerrum847PosApprox(histsRc.at(i).get(), 0.12)};
 
         _offset = 0.0;
@@ -35,16 +35,18 @@ void PeakFinder::process(std::vector<std::shared_ptr<TH1>> &histsSg, std::vector
         graphPolN.SetPoint(2, hydPos, 2223.0);
         _calib  = (2223.0 - _offset) / hydPos;
 
-        TF1 fApp("fApp", "pol2", 0.0, 8.0e3);
+        TF1 fApp("fApp", "pol1", 0.0, 8.0e3);
         graphPolN.Fit(&fApp, "RQ0");
-        auto carbonPos{getCarbonPos(histsSg.at(i).get(), fApp.GetX(4438.0))};
-        _energyPeaks.at(i).push_back(EnergyPeak(EnergyPeak::Id::CARBON, carbonPos));
-        graphPolN.SetPoint(3, carbonPos, 4438.0);
-        _calib  = (4438.0 - _offset) / carbonPos;
-        graphPolN.Fit(&fApp, "RQ0");
+
+
+//        auto carbonPos{getCarbonPos(histsSg.at(i).get(), fApp.GetX(4438.0))};
+//        _energyPeaks.at(i).push_back(EnergyPeak(EnergyPeak::Id::CARBON, carbonPos));
+//        graphPolN.SetPoint(3, carbonPos, 4438.0);
+//        _calib  = (4438.0 - _offset) / carbonPos;
+//        graphPolN.Fit(&fApp, "RQ0");
         auto oxygenPos{getOxygenPos(histsSg.at(i).get(), fApp.GetX(6129.0))};
         _energyPeaks.at(i).push_back(EnergyPeak(EnergyPeak::Id::OXYGEN, oxygenPos));
-        graphPolN.SetPoint(4, oxygenPos, 6129.0);
+        graphPolN.SetPoint(3, oxygenPos, 6129.0);
         _calib  = (6129.0 - _offset) / oxygenPos;
         auto fe7631Pos{getFerrum7631Pos(histsRc.at(i).get(), 0.0)};
         _energyPeaks.at(i).push_back(EnergyPeak(EnergyPeak::Id::FE7631, fe7631Pos));
@@ -250,20 +252,25 @@ double PeakFinder::getOxygenPos(TH1 *h, double appPos)
             / (dR + dL);
     double p0{h->GetBinContent(h->GetXaxis()->FindBin(pos + dR)) - p1 * pos};
 
-    TF1 f("f","gaus(0) + gaus(3) + pol1(6)", pos - dL, pos + dR);
-    f.SetParameters(1000, pos - getdCh(500), getdCh(80), 3000, pos, getdCh(80), p0, p1);
-    f.SetParameter(0, h->GetBinContent(h->GetXaxis()->FindBin(f.GetParameter(1))));
-    f.SetParameter(3, h->GetBinContent(h->GetXaxis()->FindBin(f.GetParameter(3))));
-    f.SetParLimits(0, 0.0, 1.0e5);
-    f.SetParLimits(1, getCh(5350.0), getCh(5800.0));
-    f.SetParLimits(2, getdCh(50.0), getdCh(120.0));
-    f.SetParLimits(3, 0, 1.0e5);
-    f.SetParLimits(4, getCh(5900.0), getCh(6450.0));
-    f.SetParLimits(5, getdCh(50.0), getdCh(120.0));
-    h->Fit("f","RQN0");
-    f.SetRange(f.GetParameter(1) - 3.0 * f.GetParameter(2), f.GetParameter(4) + 3.0 * f.GetParameter(5));
-    h->Fit("f","RQN0");
-    return f.GetParameter(4);
+    TF1 *fOxy = new TF1("fOxy","gaus(0) + gaus(3) + pol1(6)", pos - dL, pos + dR);
+    fOxy->SetParameters(1000, pos - getdCh(500), getdCh(80), 3000, pos, getdCh(80), p0, p1);
+    fOxy->SetParameter(0, h->GetBinContent(h->GetXaxis()->FindBin(fOxy->GetParameter(1))));
+    fOxy->SetParameter(3, h->GetBinContent(h->GetXaxis()->FindBin(fOxy->GetParameter(3))));
+    fOxy->SetParLimits(0, 0.0, 1.0e5);
+    fOxy->SetParLimits(1, getCh(5350.0), getCh(5800.0));
+    fOxy->SetParLimits(2, getdCh(50.0), getdCh(120.0));
+    fOxy->SetParLimits(3, 0, 1.0e5);
+    fOxy->SetParLimits(4, getCh(5900.0), getCh(6450.0));
+    fOxy->SetParLimits(5, getdCh(50.0), getdCh(120.0));
+    h->Fit("fOxy","RQN0");
+    fOxy->SetRange(fOxy->GetParameter(1) - 3.0 * fOxy->GetParameter(2), fOxy->GetParameter(4) + 3.0 * fOxy->GetParameter(5));
+    h->Fit("fOxy","RQN0");
+
+    TLine *l = new TLine(pos, h->GetMinimum(), pos, h->GetMaximum());
+    h->GetListOfFunctions()->Add(l);
+    h->GetListOfFunctions()->Add(fOxy);
+
+    return fOxy->GetParameter(4);
 }
 
 double PeakFinder::getFerrum7631Pos(TH1 *h, double appPos)

@@ -34,7 +34,7 @@ public:
     static inline constexpr double XUP_ENERGY{8.0e3};
 
 private:
-    std::unique_ptr<TimePeaksFinder> _timePeaksFinder;
+//    std::unique_ptr<TimePeaksFinder> _timePeaksFinder;
     std::unique_ptr<TimePeaksFinder> timePeaksFinder_;
     std::unique_ptr<HistogramManager> _histogramManager;
     const ChannelMap _map;
@@ -45,12 +45,17 @@ private:
     void fillHistTime(const std::vector<dec_ev_t> &events, TH1 *h, double);
 
     void fillHistTimeWithEnergyCut(const std::vector<dec_ev_t> &events,
-                                                TH1 *h,
-                                                double offsetT,
-                                                double minE,
-                                                double maxE,
-                                                bool exclude,
-                                                TF1 f);
+                                   TH1 *h,
+                                   double offsetT,
+                                   double minE,
+                                   double maxE,
+                                   bool exclude,
+                                   TF1 f);
+
+    void fillHistEnergyTime(const std::vector<dec_ev_t> &events,
+                            TH2 *h,
+                            double offsetT,
+                            TF1 f);
 
     void fillHistChannel(const std::vector<dec_ev_t> &events, TH1 *h, double minT, double maxT, bool exclude);
     void fillHistEnergy(const std::vector<dec_ev_t> &events, TH1 *h, double minT, double maxT, bool exclude, TF1 f);
@@ -59,6 +64,7 @@ private:
     void processTimeWithEnergyCut();
     void processGammaCh();
     void processGammaEnergy();
+    void processGammaEnergyTime();
 
     std::vector<std::vector<EnergyPeak>>  _energyPeaks;
 

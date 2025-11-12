@@ -56,6 +56,55 @@ std::vector<std::shared_ptr<TH1> > HistogramManager::createHistograms(const std:
     return hists;
 }
 
+std::vector<std::vector<std::shared_ptr<TH2> > > HistogramManager::createHistograms(const std::string &histName,
+                                                                                    int nBinsX,
+                                                                                    double xLow,
+                                                                                    double xUp,
+                                                                                    int nBinsY,
+                                                                                    double yLow,
+                                                                                    double yUp,
+                                                                                    std::vector<int> &idxsGamma,
+                                                                                    std::vector<int> &idxsAlpha) const
+{
+    std::vector<std::vector<std::shared_ptr<TH2>>> hists;
+    hists.resize(idxsGamma.size());
+    std::stringstream ss;
+    for (size_t i{0}; i < idxsGamma.size(); ++i)
+    {
+        for (size_t j{0}; j <  idxsAlpha.size(); ++j)
+        {
+            ss.clear();ss.str("");
+            ss << histName << "_" << idxsGamma.at(i) << "_" << idxsAlpha.at(j);
+            auto h{std::make_shared<TH2D>(ss.str().c_str(), ss.str().c_str(), nBinsX, xLow, xUp, nBinsY, yLow, yUp)};
+            h->Sumw2();
+            hists.at(i).push_back(h);
+        }
+    }
+    return hists;
+}
+
+std::vector<std::shared_ptr<TH2> > HistogramManager::createHistograms(const std::string &histName,
+                                                                      int nBinsX,
+                                                                      double xLow,
+                                                                      double xUp,
+                                                                      int nBinsY,
+                                                                      double yLow,
+                                                                      double yUp,
+                                                                      std::vector<int> &idxs) const
+{
+    std::vector<std::shared_ptr<TH2>> hists;
+    std::stringstream ss;
+    for (size_t i{0}; i < idxs.size(); ++i)
+    {
+        ss.clear();ss.str("");
+        ss << histName << "_" << idxs.at(i);
+        auto h{std::make_shared<TH2D>(ss.str().c_str(), ss.str().c_str(), nBinsX, xLow, xUp, nBinsY, yLow, yUp)};
+        h->Sumw2();
+        hists.push_back(h);
+    }
+    return hists;
+}
+
 void HistogramManager::printToPsFile(const std::string &fileName,
                              std::vector<std::shared_ptr<TH1> > &hists) const
 {

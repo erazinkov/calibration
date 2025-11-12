@@ -87,6 +87,7 @@ int main(int argc, char *argv[])
 //    process("/home/egor/shares/tmp/sugar_emptiness_1");
 //    process("/home/egor/shares/tmp/emptiness_1");
     process("/home/egor/shares/tmp/c12_2kg_mask_1");
+//    process("/home/egor/shares/tmp/sio2_2kg_mask_1");
     auto stop = std::chrono::steady_clock::now();
     std::cout << "Time elapsed, ms: " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << std::endl;
 
