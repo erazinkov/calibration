@@ -17,7 +17,7 @@ void PeakFinder::process(std::vector<std::shared_ptr<TH1>> &histsSg, std::vector
 
     for (size_t i{0}; i < _energyPeaks.size(); ++i)
     {
-        TGraphErrors graphPolN(4);
+        TGraphErrors graphPolN(5);
         auto fe847PosApprox{getFerrum847PosApprox(histsRc.at(i).get(), 0.12)};
 
         _offset = 0.0;
@@ -34,19 +34,16 @@ void PeakFinder::process(std::vector<std::shared_ptr<TH1>> &histsSg, std::vector
         _energyPeaks.at(i).push_back(EnergyPeak(EnergyPeak::Id::HYDROGEN, hydPos));
         graphPolN.SetPoint(2, hydPos, 2223.0);
         _calib  = (2223.0 - _offset) / hydPos;
-
-        TF1 fApp("fApp", "pol1", 0.0, 8.0e3);
+        TF1 fApp("fApp", "pol2", 0.0, 8.0e3);
         graphPolN.Fit(&fApp, "RQ0");
-
-
-//        auto carbonPos{getCarbonPos(histsSg.at(i).get(), fApp.GetX(4438.0))};
-//        _energyPeaks.at(i).push_back(EnergyPeak(EnergyPeak::Id::CARBON, carbonPos));
-//        graphPolN.SetPoint(3, carbonPos, 4438.0);
-//        _calib  = (4438.0 - _offset) / carbonPos;
-//        graphPolN.Fit(&fApp, "RQ0");
+        auto carbonPos{getCarbonPos(histsSg.at(i).get(), fApp.GetX(4438.0))};
+        _energyPeaks.at(i).push_back(EnergyPeak(EnergyPeak::Id::CARBON, carbonPos));
+        graphPolN.SetPoint(3, carbonPos, 4438.0);
+        _calib  = (4438.0 - _offset) / carbonPos;
+        graphPolN.Fit(&fApp, "RQ0");
         auto oxygenPos{getOxygenPos(histsSg.at(i).get(), fApp.GetX(6129.0))};
         _energyPeaks.at(i).push_back(EnergyPeak(EnergyPeak::Id::OXYGEN, oxygenPos));
-        graphPolN.SetPoint(3, oxygenPos, 6129.0);
+        graphPolN.SetPoint(4, oxygenPos, 6129.0);
         _calib  = (6129.0 - _offset) / oxygenPos;
         auto fe7631Pos{getFerrum7631Pos(histsRc.at(i).get(), 0.0)};
         _energyPeaks.at(i).push_back(EnergyPeak(EnergyPeak::Id::FE7631, fe7631Pos));
@@ -276,23 +273,26 @@ double PeakFinder::getOxygenPos(TH1 *h, double appPos)
 double PeakFinder::getFerrum7631Pos(TH1 *h, double appPos)
 {
     double fc=7631, dfc1=800, dfc2=370;
-    double corr=-350;
-    TF1 f("f","gaus(0)+gaus(3)+pol1(6)", getCh(fc-dfc1+corr), getCh(fc+dfc2+corr)); //ryn
+    double corr=0.0;
+    TF1 *f = new TF1("f","gaus(0)+gaus(3)+pol1(6)", getCh(fc-dfc1+corr), getCh(fc+dfc2+corr)); //ryn
     double p0;
     double p1{(h->GetBinContent(h->GetXaxis()->FindBin(getCh(fc + dfc2)))-h->GetBinContent(h->GetXaxis()->FindBin(getCh(fc-dfc1))))
                 /(getCh(fc + dfc2) - getCh(fc - dfc1))};
     p0 = h->GetBinContent(h->GetXaxis()->FindBin(getCh(fc+dfc2)))-p1*getCh(fc+dfc2);
-    f.SetParameters(1000,getCh(7100+corr),getdCh(80),500,getCh(7631+corr),getdCh(80),p0,p1);
-    f.SetParLimits(0,0,1.0e5);
-    f.SetParLimits(1,getCh(6900+corr),getCh(7300+corr));
-    f.SetParLimits(2,getdCh(50.),getdCh(120.));
-    f.SetParLimits(3,0,1.0e5);
-    f.SetParLimits(4,getCh(7400+corr),getCh(7850+corr));
-    f.SetParLimits(5,getdCh(50.),getdCh(120.));
+    f->SetParameters(1000,getCh(7100+corr),getdCh(80),500,getCh(7631+corr),getdCh(80),p0,p1);
+    f->SetParLimits(0,0,1.0e5);
+    f->SetParLimits(1,getCh(6900+corr),getCh(7300+corr));
+    f->SetParLimits(2,getdCh(50.),getdCh(120.));
+    f->SetParLimits(3,0,1.0e5);
+    f->SetParLimits(4,getCh(7400+corr),getCh(7850+corr));
+    f->SetParLimits(5,getdCh(50.),getdCh(120.));
     h->Fit("f","RQN0");
-    f.SetRange(f.GetParameter(4)-getdCh(dfc1),f.GetParameter(4)+getdCh(dfc2));
+    f->SetRange(f->GetParameter(4)-getdCh(dfc1),f->GetParameter(4)+getdCh(dfc2));
     h->Fit("f","RQN0");
-    return f.GetParameter(4);
+    TLine *l = new TLine(getCh(7631+corr), h->GetMinimum(), getCh(7631+corr), h->GetMaximum());
+    h->GetListOfFunctions()->Add(l);
+    h->GetListOfFunctions()->Add(f);
+    return f->GetParameter(4);
 }
 
 const std::vector<std::vector<EnergyPeak> > &PeakFinder::energyPeaks() const

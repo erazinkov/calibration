@@ -4,6 +4,7 @@
 #include <fstream>
 #include <chrono>
 #include <unistd.h>
+#include <filesystem>
 
 #include "decoder.h"
 #include "calibration.h"
@@ -18,9 +19,12 @@
 
 void process(const std::string fileName)
 {
+
+    auto pathWithFileName{fileName};
+    std::filesystem::path path{pathWithFileName};
+
 //    const auto pre = ChannelMap::mapNAP();
     const auto pre = ChannelMap::mapTMP();
-//    auto start = std::chrono::steady_clock::now();
     Decoder decoder(fileName, pre);
 
     auto r = decoder.events();
@@ -31,12 +35,11 @@ void process(const std::string fileName)
         std::cout << item << " ";
     }
     std::cout << c.time << std::endl;
-//    auto stop = std::chrono::steady_clock::now();
-//    std::cout << "Time elapsed, ms: " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << std::endl;
+
     if (!r.empty())
     {
         std::cout << "Events: " << r.size() << std::endl;
-        Calibration calibration(pre, r);
+        Calibration calibration(path.stem().string(), pre, r);
     }
 }
 
@@ -86,10 +89,12 @@ int main(int argc, char *argv[])
 //    process("/home/egor/shares/tmp/kp_static_1"); // file with bad block
 //    process("/home/egor/shares/tmp/sugar_emptiness_1");
 //    process("/home/egor/shares/tmp/emptiness_1");
-    process("/home/egor/shares/tmp/c12_2kg_mask_1");
+//    process("/home/egor/shares/tmp/c12_2kg_mask_1");
 //    process("/home/egor/shares/tmp/sio2_2kg_mask_1");
+    process("/home/egor/shares/tmp/s_2kg_mask_1");
+//    process("/home/egor/shares/tmp/sugar_sulfur_1");
     auto stop = std::chrono::steady_clock::now();
-    std::cout << "Time elapsed, ms: " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << std::endl;
+    std::cout << "Total time elapsed, ms: " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << std::endl;
 
 //    uint64_t v1 = 3926860182;
 //    uint32_t v2 = 3927035562;

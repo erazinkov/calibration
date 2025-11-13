@@ -5,9 +5,9 @@
 PiecewiseLinearFunction::PiecewiseLinearFunction(const std::vector<EnergyPeak> &energyPeaks)
 {
     for (size_t i{0}; i < energyPeaks.size() - 1; ++i) {
-        _par.push_back(par(energyPeaks.at(i), energyPeaks.at(i + 1)));
+        par_.push_back(par(energyPeaks.at(i), energyPeaks.at(i + 1)));
     }
-    std::sort(_par.begin(), _par.end());
+    std::sort(par_.begin(), par_.end());
 }
 
 PiecewiseLinearFunction::Par PiecewiseLinearFunction::par(const EnergyPeak &prev, const EnergyPeak &next)

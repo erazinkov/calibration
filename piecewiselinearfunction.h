@@ -13,9 +13,9 @@ public:
        double arg{x[0]};
        double val{0.0};
        val = arg;
-       for (size_t i{0}; i < _par.size(); ++i) {
-           if (arg < _par.at(i).node) {
-               val = _par.at(i).intercept + arg * _par.at(i).slope;
+       for (size_t i{0}; i < par_.size(); ++i) {
+           if (arg < par_.at(i).node) {
+               val = par_.at(i).intercept + arg * par_.at(i).slope;
                return val;
            }
        }
@@ -34,7 +34,7 @@ private:
     };
 
 
-    std::vector<Par> _par;
+    std::vector<Par> par_;
 
     Par par(const EnergyPeak &prev, const EnergyPeak &next);
 };

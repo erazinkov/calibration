@@ -17,7 +17,7 @@
 class Calibration
 {
 public:
-    Calibration(const ChannelMap &map, std::vector<dec_ev_t> &events);
+    Calibration(const std::string &fileName, const ChannelMap &map, std::vector<dec_ev_t> &events);
     ~Calibration();
     void process();
 
@@ -34,6 +34,7 @@ public:
     static inline constexpr double XUP_ENERGY{8.0e3};
 
 private:
+    std::string fileName_;
 //    std::unique_ptr<TimePeaksFinder> _timePeaksFinder;
     std::unique_ptr<TimePeaksFinder> timePeaksFinder_;
     std::unique_ptr<HistogramManager> _histogramManager;

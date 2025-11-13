@@ -15,15 +15,14 @@
 
 #include "utils.h"
 
-Calibration::Calibration(const ChannelMap &map, std::vector<dec_ev_t> &events) : _map(map), _events(events)
-{
+Calibration::Calibration(const std::string &fileName, const ChannelMap &map, std::vector<dec_ev_t> &events)
+    : fileName_(fileName), _map(map), _events(events)
+{   
     _idxsGamma = map.getIdxsByType(Channel::GAMMA);
     _idxsAlpha = map.getIdxsByType(Channel::ALPHA);
 
     timePeaksFinder_ = std::make_unique<TimePeaksFinder>(_map);
     _histogramManager = std::make_unique<HistogramManager>();
-
-    timePeaksFinder_ = std::make_unique<TimePeaksFinder>(_map);
 
     process();
 }
@@ -39,7 +38,7 @@ void Calibration::process()
     processTime();
     processGammaCh();
     processGammaEnergyTime();
-//   processGammaEnergy();
+    processGammaEnergy();
 //   processTimeWithEnergyCut();
 }
 
@@ -100,6 +99,7 @@ void Calibration::fillHistEnergyTime(const std::vector<dec_ev_t> &events, TH2 *h
     {
         auto t{static_cast<double>(item.tdc)};
         auto e{f.Eval(static_cast<double>(item.g.amp))};
+//        auto e{static_cast<double>(item.g.amp)};
         h->Fill(e, t - offsetT);
     }
 }
@@ -173,7 +173,23 @@ void Calibration::processTime()
     auto stop = std::chrono::steady_clock::now();
     std::cout << "Time elapsed, ms: " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << std::endl;
 
+    const std::string outputFileNameTmp{"output_time_raw_" + fileName_ + ".root"};
+    std::unique_ptr<TFile> fileTmp{TFile::Open((outputFileNameTmp).c_str(), "RECREATE")};
+    if (fileTmp.get())
+    {
+        for (size_t i{0}; i < hists.size(); ++i)
+        {
+            for (size_t j{0}; j <  hists.at(i).size(); ++j)
+            {
+                hists.at(i).at(j).get()->Write(hists.at(i).at(j).get()->GetName(), TObject::kOverwrite);
+            }
+        }
+    }
+
    timePeaksFinder_.get()->calculatePeaksPos(hists);
+
+
+
 //   timePeaksFinder_.get()->readPeaksPosFromFile("time_peak_pos_c_12_new.txt");
 //    timePeaksFinder_.get()->readPeaksPosFromFile("time_peak_pos_c12_bez_nijnej_zaschity.txt");
 //    timePeaksFinder_.get()->writePeaksPosToFile("time_peak_pos_c12_bez_nijnej_zaschity.txt");
@@ -208,7 +224,7 @@ void Calibration::processTime()
    }
    const std::string outputFileName{"output_time.root"};
    std::unique_ptr<TFile> file{TFile::Open((outputFileName).c_str(), "RECREATE")};
-   if (file->IsOpen())
+   if (file.get())
    {
        for (auto &item : histsTimeAlpha)
        {
@@ -273,7 +289,7 @@ void Calibration::processTimeWithEnergyCut()
    }
    const std::string outputFileName{"output_time_c12_2kg_mask_1_w_energy_cut.root"};
    std::unique_ptr<TFile> file{TFile::Open((outputFileName).c_str(), "RECREATE")};
-   if (file->IsOpen())
+   if (file.get())
    {
        for (auto &item : histsTimeAlpha)
        {
@@ -349,6 +365,36 @@ void Calibration::processGammaEnergy()
         fs.push_back(f);
     }
 
+
+    // save calibration
+//    const std::string outputFileName1{"calibration_functions_" + fileName_ + ".root"};
+//    std::unique_ptr<TFile> outputFile{TFile::Open((outputFileName1).c_str(), "RECREATE")};
+//    if (outputFile.get())
+//    {
+//        for (size_t i{0}; i < fs.size(); ++i)
+//        {
+//            fs.at(i).Write(("f_" + std::to_string(i)).c_str(), TObject::kOverwrite);
+//        }
+//    }
+    // load calibration
+//    const std::string inputFileName{"calibration_functions_" + fileName_ + ".root"};
+    const std::string inputFileName{"calibration_functions_sugar_sulfur_1.root"};
+    std::unique_ptr<TFile> inputFile{TFile::Open((inputFileName).c_str(), "READ")};
+    if (inputFile.get())
+    {
+        for (size_t i{0}; i < fs.size(); ++i)
+        {
+            TObject *tObj{nullptr};
+            inputFile->GetObject(("f_" + std::to_string(i)).c_str(), tObj);
+            if (tObj)
+            {
+                fs[i] = *(static_cast<TF1 *>(tObj));
+            }
+            delete tObj;
+            tObj = nullptr;
+        }
+    }
+
     std::vector<std::function<void()>> tasks;
     for (size_t i{0}; i < histsSg.size(); ++i)
     {
@@ -356,8 +402,8 @@ void Calibration::processGammaEnergy()
         {
             tasks.push_back([this, i, j, &histsSg, &histsBg, &fs] () {
                 auto sE{selectedEvents(static_cast<u_int8_t>(i), static_cast<u_int8_t>(j))};
-                auto tSgMin{timePeaksFinder_.get()->timePeaksPos().at(i).at(j) - 5.5};
-                auto tSgMax{timePeaksFinder_.get()->timePeaksPos().at(i).at(j) + 0.5};
+                auto tSgMin{timePeaksFinder_.get()->timePeaksPos().at(i).at(j) - 3.0};
+                auto tSgMax{timePeaksFinder_.get()->timePeaksPos().at(i).at(j) + 3.0};
                 fillHistEnergy(sE, histsSg.at(i).at(j).get(), tSgMin, tSgMax, false, fs.at(i));
                 auto tBgMin{timePeaksFinder_.get()->timePeaksPos().at(i).at(j) - 30.0};
                 auto tBgMax{timePeaksFinder_.get()->timePeaksPos().at(i).at(j) - 20.0};
@@ -395,10 +441,10 @@ void Calibration::processGammaEnergy()
     }
     _histogramManager->printToPsFile("eSgGamma", histsSgGamma);
     // _histogramManager->saveToRootFile("output", hist);
-   const std::string outputFileName{"output.root"};
+   const std::string outputFileName{"output_energy_" + fileName_ + ".root"};
 
    std::unique_ptr<TFile> file{TFile::Open((outputFileName).c_str(), "RECREATE")};
-   if (file->IsOpen())
+   if (file.get())
    {
        for (auto &item : histsSgAlpha)
        {
@@ -412,6 +458,50 @@ void Calibration::processGammaEnergy()
    }
 }
 
+//void Calibration::processGammaEnergyTime()
+//{
+//    auto hists(_histogramManager->createHistograms("histChannelTime", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, BINS_TIME, XLOW_TIME, XUP_TIME, _idxsGamma, _idxsAlpha));
+
+//    std::vector<TF1> fs;
+//    for (size_t i{0}; i < hists.size(); ++i)
+//    {
+//        PiecewiseLinearFunction fObj(_energyPeaks.at(i));
+//        TF1 f("f", fObj, XLOW_CHANNEL, XUP_CHANNEL, 0);
+//        fs.push_back(f);
+//    }
+
+//    std::vector<std::function<void()>> tasks;
+//    for (size_t i{0}; i < hists.size(); ++i)
+//    {
+//        for (size_t j{0}; j <  hists.at(i).size(); ++j)
+//        {
+//            tasks.push_back([this, &hists, i, j, &fs](){
+//                auto sE{selectedEvents(static_cast<u_int8_t>(_idxsGamma.at(i)), static_cast<u_int8_t>(_idxsAlpha.at(j)))};
+//                fillHistEnergyTime(sE,
+//                                   hists.at(i).at(j).get(),
+//                                   0.0,
+//                                   fs.at(i));
+//            });
+//        }
+//    }
+//    func_async(tasks.begin(), tasks.end());
+//    tasks.clear();
+
+
+//    const std::string outputFileName{"output_et_" + fileName_ + "_raw.root"};
+//    std::unique_ptr<TFile> file{TFile::Open((outputFileName).c_str(), "RECREATE")};
+//    if (file.get())
+//    {
+//        for (size_t i{0}; i < hists.size(); ++i)
+//        {
+//            for (size_t j{0}; j <  hists.at(i).size(); ++j)
+//            {
+//                hists.at(i).at(j).get()->Write(hists.at(i).at(j).get()->GetName(), TObject::kOverwrite);
+//            }
+//        }
+//    }
+//}
+
 void Calibration::processGammaEnergyTime()
 {
     auto hists(_histogramManager->createHistograms("histEnergyTime", BINS_ENERGY, XLOW_ENERGY, XUP_ENERGY, BINS_TIME, XLOW_TIME, XUP_TIME, _idxsGamma, _idxsAlpha));
@@ -422,6 +512,25 @@ void Calibration::processGammaEnergyTime()
         PiecewiseLinearFunction fObj(_energyPeaks.at(i));
         TF1 f("f", fObj, XLOW_CHANNEL, XUP_CHANNEL, 0);
         fs.push_back(f);
+    }
+
+    // load calibration
+//    const std::string inputFileName{"calibration_functions_" + fileName_ + ".root"};
+    const std::string inputFileName{"calibration_functions_sugar_sulfur_1.root"};
+    std::unique_ptr<TFile> inputFile{TFile::Open((inputFileName).c_str(), "READ")};
+    if (inputFile.get())
+    {
+        for (size_t i{0}; i < fs.size(); ++i)
+        {
+            TObject *tObj{nullptr};
+            inputFile->GetObject(("f_" + std::to_string(i)).c_str(), tObj);
+            if (tObj)
+            {
+                fs[i] = *(static_cast<TF1 *>(tObj));
+            }
+            delete tObj;
+            tObj = nullptr;
+        }
     }
 
     std::vector<std::function<void()>> tasks;
@@ -449,7 +558,7 @@ void Calibration::processGammaEnergyTime()
             histsEnergyTimeAlpha.at(j).get()->Add(hists.at(i).at(j).get());
         }
     }
-    const std::string outputFileName{"output_et_c12_2kg_mask_1.root"};
+    const std::string outputFileName{"output_et_" + fileName_ + ".root"};
 //    const std::string outputFileName{"output_et_emptiness_1.root"};
 //    const std::string outputFileName{"output_et_sio2_2kg_mask_1.root"};
     std::unique_ptr<TFile> file{TFile::Open((outputFileName).c_str(), "RECREATE")};
