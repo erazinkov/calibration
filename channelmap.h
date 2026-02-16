@@ -21,7 +21,7 @@ public:
     std::optional<u_int8_t> getIdxByHardwareIdx(u_int8_t &hardwareIndex);
 
 private:
-    std::map<u_int8_t, Channel> _map;
+    std::map<u_int8_t, Channel> map_;
     ChannelMap(std::map<u_int8_t, Channel> map);
 };
 

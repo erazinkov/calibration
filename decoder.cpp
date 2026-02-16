@@ -76,7 +76,7 @@ void Decoder::process()
                 continue;
             }
             ifs_ >> ev;
-            if (ev.np != 2)
+            if (ev.np != 3)
             {
                 hdr.size -= sizeof(stor_packet_hdr_t);
                 hdr.size -= sizeof(stor_ev_hdr_t);
@@ -86,7 +86,6 @@ void Decoder::process()
             std::unique_ptr<stor_puls_t> g{std::make_unique<stor_puls_t>(stor_puls_t())};
             std::unique_ptr<stor_puls_t> a{std::make_unique<stor_puls_t>(stor_puls_t())};
             ifs_ >> *g.get() >> *a.get();
-
 
             auto idxGamma{map_.getIdxByHardwareIdx(g.get()->ch)};
             auto idxAlpha{map_.getIdxByHardwareIdx(a.get()->ch)};

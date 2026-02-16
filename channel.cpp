@@ -1,17 +1,17 @@
 #include "channel.h"
 
 Channel::Channel(EChannelType type, std::optional<u_int8_t> index)
-    : _index{index}, _type{type}
+    : index_{index}, type_{type}
 {
 
 }
 
 std::optional<u_int8_t> Channel::index() const
 {
-    return _index;
+    return index_;
 }
 
 Channel::EChannelType Channel::type() const
 {
-    return _type;
+    return type_;
 }

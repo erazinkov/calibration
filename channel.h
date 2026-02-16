@@ -26,8 +26,8 @@ public:
     EChannelType type() const;
 
 private:
-    std::optional<u_int8_t> _index;
-    EChannelType _type;
+    std::optional<u_int8_t> index_;
+    EChannelType type_;
 };
 
 #endif // CHANNEL_H

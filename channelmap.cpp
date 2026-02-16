@@ -5,7 +5,7 @@
 
 ChannelMap::ChannelMap(std::map<u_int8_t, Channel> map)
 {
-    _map = map;
+    map_ = map;
 }
 
 ChannelMap ChannelMap::mapNAP()
@@ -34,26 +34,67 @@ ChannelMap ChannelMap::mapNAP()
     return ChannelMap(map);
 }
 
+//ChannelMap ChannelMap::mapTMP()
+//{
+//    std::map<u_int8_t, Channel> map
+//    {
+//        {0, Channel(Channel::GAMMA, 0)},
+//        {1, Channel(Channel::GAMMA, 1)},
+//        {2, Channel(Channel::GAMMA, 2)},
+//        {3, Channel(Channel::GAMMA, 3)},
+//        {4, Channel(Channel::GAMMA, 4)},
+//        {5, Channel(Channel::GAMMA, 5)},
+//        {6, Channel(Channel::GAMMA, 6)},
+//        {7, Channel(Channel::GAMMA, 7)},
+//        {8, Channel(Channel::ALPHA, 0)},
+//        {9, Channel(Channel::ALPHA, 1)},
+//        {10, Channel(Channel::ALPHA, 2)},
+//        {11, Channel(Channel::ALPHA, 3)},
+//        {12, Channel(Channel::ALPHA, 4)},
+//        {13, Channel(Channel::ALPHA, 5)},
+//        {14, Channel(Channel::ALPHA, 6)},
+//        {15, Channel(Channel::ALPHA, 7)},
+//    };
+
+//    return ChannelMap(map);
+//}
+
 ChannelMap ChannelMap::mapTMP()
 {
     std::map<u_int8_t, Channel> map
     {
-        {0, Channel(Channel::GAMMA, 0)},
-        {1, Channel(Channel::GAMMA, 1)},
-        {2, Channel(Channel::GAMMA, 2)},
-        {3, Channel(Channel::GAMMA, 3)},
-        {4, Channel(Channel::GAMMA, 4)},
-        {5, Channel(Channel::GAMMA, 5)},
-        {6, Channel(Channel::GAMMA, 6)},
-        {7, Channel(Channel::GAMMA, 7)},
-        {8, Channel(Channel::ALPHA, 0)},
-        {9, Channel(Channel::ALPHA, 1)},
-        {10, Channel(Channel::ALPHA, 2)},
-        {11, Channel(Channel::ALPHA, 3)},
-        {12, Channel(Channel::ALPHA, 4)},
-        {13, Channel(Channel::ALPHA, 5)},
-        {14, Channel(Channel::ALPHA, 6)},
-        {15, Channel(Channel::ALPHA, 7)},
+        {0, Channel(Channel::ALPHA, 0)},
+        {1, Channel(Channel::ALPHA, 1)},
+        {2, Channel(Channel::ALPHA, 2)},
+        {3, Channel(Channel::ALPHA, 3)},
+        {4, Channel(Channel::ALPHA, 4)},
+        {5, Channel(Channel::ALPHA, 5)},
+        {6, Channel(Channel::ALPHA, 6)},
+        {7, Channel(Channel::ALPHA, 7)},
+        {8, Channel(Channel::ALPHA, 8)},
+        {9, Channel(Channel::ALPHA, 9)},
+        {10, Channel(Channel::ALPHA, 10)},
+        {11, Channel(Channel::ALPHA, 11)},
+        {12, Channel(Channel::ALPHA, 12)},
+        {13, Channel(Channel::ALPHA, 13)},
+        {14, Channel(Channel::UNKNOWN, 111)},
+        {15, Channel(Channel::UNKNOWN, 111)},
+        {16, Channel(Channel::UNKNOWN, 111)},
+        {17, Channel(Channel::UNKNOWN, 111)},
+        {18, Channel(Channel::UNKNOWN, 111)},
+        {19, Channel(Channel::UNKNOWN, 111)},
+        {20, Channel(Channel::GAMMA, 4)},
+        {21, Channel(Channel::UNKNOWN, 111)},
+        {22, Channel(Channel::UNKNOWN, 111)},
+        {23, Channel(Channel::UNKNOWN, 111)},
+        {24, Channel(Channel::UNKNOWN, 111)},
+        {25, Channel(Channel::UNKNOWN, 111)},
+        {26, Channel(Channel::UNKNOWN, 111)},
+        {27, Channel(Channel::UNKNOWN, 111)},
+        {28, Channel(Channel::UNKNOWN, 111)},
+        {29, Channel(Channel::UNKNOWN, 111)},
+        {30, Channel(Channel::UNKNOWN, 111)},
+        {31, Channel(Channel::UNKNOWN, 111)},
     };
 
     return ChannelMap(map);
@@ -104,9 +145,9 @@ std::vector<int> ChannelMap::getIdxsByType(Channel::EChannelType type) const
 {
     std::vector<int> idxs;
 
-    auto it = _map.begin();
+    auto it = map_.begin();
 
-    while ( (it = std::find_if(it, _map.end(), [&type](std::pair<u_int8_t, Channel> mapItem){return mapItem.second.type() == type;}) ) != _map.end())
+    while ( (it = std::find_if(it, map_.end(), [&type](std::pair<u_int8_t, Channel> mapItem){return mapItem.second.type() == type;}) ) != map_.end())
     {
         if ((*it).second.index().has_value())
         {
@@ -118,18 +159,17 @@ std::vector<int> ChannelMap::getIdxsByType(Channel::EChannelType type) const
 }
 
 bool ChannelMap::isCorrect(std::vector<u_int8_t> &map) const {
-    if (map.size() != _map.size())
+    if (map.size() != map_.size())
     {
         return false;
     }
-
-    for (size_t i{0}; i < _map.size(); ++i)
+    for (size_t i{0}; i < map_.size(); ++i)
     {
-        if (_map.at(static_cast<u_int8_t>(i)).type() == Channel::UNKNOWN)
+        if (map_.at(static_cast<u_int8_t>(i)).type() == Channel::UNKNOWN)
         {
             continue;
         }
-        if ( (map.at(i) & _map.at(static_cast<u_int8_t>(i)).type()) != _map.at(static_cast<u_int8_t>(i)).type() )
+        if ( (map.at(i) & map_.at(static_cast<u_int8_t>(i)).type()) != map_.at(static_cast<u_int8_t>(i)).type() )
         {
             return false;
         }
@@ -139,13 +179,13 @@ bool ChannelMap::isCorrect(std::vector<u_int8_t> &map) const {
 
 const std::map<u_int8_t, Channel> &ChannelMap::map() const
 {
-    return _map;
+    return map_;
 }
 
 std::optional<u_int8_t> ChannelMap::getIdxByHardwareIdx(u_int8_t &hardwareIndex)
 {
-    auto it{_map.find(hardwareIndex)};
-    if (it != _map.end())
+    auto it{map_.find(hardwareIndex)};
+    if (it != map_.end())
     {
         return it->second.index();
     }
