@@ -17,6 +17,9 @@ public:
            if (arg < par_.at(i).node) {
                val = par_.at(i).intercept + arg * par_.at(i).slope;
                return val;
+           } else if (i == par_.size() - 1) {
+               val = par_.at(i).intercept + arg * par_.at(i).slope;
+               return val;
            }
        }
        return val;

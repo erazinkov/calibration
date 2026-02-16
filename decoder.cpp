@@ -83,21 +83,21 @@ void Decoder::process()
                 ifs_.ignore(hdr.size);
                 continue;
             }
-            stor_puls_t *g = new stor_puls_t();
-            stor_puls_t *a = new stor_puls_t();
-            ifs_ >> *g >> *a;
+            std::unique_ptr<stor_puls_t> g{std::make_unique<stor_puls_t>(stor_puls_t())};
+            std::unique_ptr<stor_puls_t> a{std::make_unique<stor_puls_t>(stor_puls_t())};
+            ifs_ >> *g.get() >> *a.get();
 
 
-            auto idxGamma{map_.getIdxByHardwareIdx(g->ch)};
-            auto idxAlpha{map_.getIdxByHardwareIdx(a->ch)};
+            auto idxGamma{map_.getIdxByHardwareIdx(g.get()->ch)};
+            auto idxAlpha{map_.getIdxByHardwareIdx(a.get()->ch)};
             if (idxGamma.has_value() && idxAlpha.has_value())
             {
                 dec_ev_t event;
                 event.g.index = idxGamma.value();
-                event.g.amp = g->a;
+                event.g.amp = g.get()->a;
                 event.a.index = idxAlpha.value();
-                event.a.amp = a->a;
-                event.tdc = g->t - a->t;
+                event.a.amp = a.get()->a;
+                event.tdc = g.get()->t - a.get()->t;
                 double currentTs{static_cast<double>(ev.ts)};
                 event.ts = currentTs;
                 if (isIntegerOverflow(event.ts, prevTs) && events_.size()) {
@@ -124,8 +124,6 @@ void Decoder::process()
 //                prevTs = event.ts;
 //                events_.push_back(event);
 //            }
-            delete g;
-            delete a;
             continue;
         }
         if (hdr.id == STOR_ID_CNTR && hdr.size > sizeof(stor_packet_hdr_t))

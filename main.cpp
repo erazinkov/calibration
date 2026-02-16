@@ -89,10 +89,20 @@ int main(int argc, char *argv[])
 //    process("/home/egor/shares/tmp/kp_static_1"); // file with bad block
 //    process("/home/egor/shares/tmp/sugar_emptiness_1");
 //    process("/home/egor/shares/tmp/emptiness_1");
-//    process("/home/egor/shares/tmp/c12_2kg_mask_1");
+    process("/home/egor/shares/tmp/c12_2kg_mask_1");
 //    process("/home/egor/shares/tmp/sio2_2kg_mask_1");
-    process("/home/egor/shares/tmp/s_2kg_mask_1");
+//    process("/home/egor/shares/tmp/s_2kg_mask_1");
+//    process("/home/egor/shares/tmp/water_2_5kg_mask_1");
 //    process("/home/egor/shares/tmp/sugar_sulfur_1");
+//    process("/home/egor/shares/tmp/s_2kg_sugar_1kg");
+//    process("/home/egor/shares/tmp/emptiness_true_test_1");
+//    process("/home/egor/shares/tmp/c12_150g_true_test_1");
+//    process("/home/egor/shares/tmp/agpf_pustota_old/mask_sio2_new");
+//    process("/home/egor/shares/tmp/ozer_11591_povtor_1");
+//    process("/home/egor/shares/tmp/agpf_pustota_old/mask_sio2_new");
+//    process("/home/egor/shares/tmp/agpf_pustota_old/mask_sio2_new_2");
+//    process("/home/egor/shares/tmp/agpf_pustota_old/mask_mgo_new");
+//    process("/home/egor/shares/tmp/agpf_pustota_old/mask_mgo_new_2");
     auto stop = std::chrono::steady_clock::now();
     std::cout << "Total time elapsed, ms: " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << std::endl;
 

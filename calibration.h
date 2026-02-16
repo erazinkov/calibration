@@ -37,9 +37,9 @@ private:
     std::string fileName_;
 //    std::unique_ptr<TimePeaksFinder> _timePeaksFinder;
     std::unique_ptr<TimePeaksFinder> timePeaksFinder_;
-    std::unique_ptr<HistogramManager> _histogramManager;
-    const ChannelMap _map;
-    const std::vector<dec_ev_t> _events;
+    std::unique_ptr<HistogramManager> histogramManager_;
+    const ChannelMap map_;
+    const std::vector<dec_ev_t> events_;
 
     std::vector<dec_ev_t> selectedEvents(uint8_t idxGamma, u_int8_t idxAlpha);
 
@@ -53,24 +53,35 @@ private:
                                    bool exclude,
                                    TF1 f);
 
+    void fillHistEnergyTimeWithTimeCut(const std::vector<dec_ev_t> &events,
+                                       TH2 *h,
+                                       double minT,
+                                       double maxT,
+                                       bool exclude,
+                                       TF1 f);
+
     void fillHistEnergyTime(const std::vector<dec_ev_t> &events,
                             TH2 *h,
                             double offsetT,
                             TF1 f);
 
     void fillHistChannel(const std::vector<dec_ev_t> &events, TH1 *h, double minT, double maxT, bool exclude);
+    void fillHistChannelA(const std::vector<dec_ev_t> &events, TH1 *h);
     void fillHistEnergy(const std::vector<dec_ev_t> &events, TH1 *h, double minT, double maxT, bool exclude, TF1 f);
 
     void processTime();
     void processTimeWithEnergyCut();
+    void processAlphaCh();
     void processGammaCh();
     void processGammaEnergy();
     void processGammaEnergyTime();
 
-    std::vector<std::vector<EnergyPeak>>  _energyPeaks;
+    void processGammaEnergyTime1();
 
-    std::vector<int> _idxsGamma;
-    std::vector<int> _idxsAlpha;
+    std::vector<std::vector<EnergyPeak>>  energyPeaks_;
+
+    std::vector<int> idxsGamma_;
+    std::vector<int> idxsAlpha_;
 
 
 };

@@ -17,7 +17,7 @@ void PeakFinder::process(std::vector<std::shared_ptr<TH1>> &histsSg, std::vector
 
     for (size_t i{0}; i < _energyPeaks.size(); ++i)
     {
-        TGraphErrors graphPolN(5);
+        TGraphErrors graphPolN(4);
         auto fe847PosApprox{getFerrum847PosApprox(histsRc.at(i).get(), 0.12)};
 
         _offset = 0.0;
@@ -36,14 +36,14 @@ void PeakFinder::process(std::vector<std::shared_ptr<TH1>> &histsSg, std::vector
         _calib  = (2223.0 - _offset) / hydPos;
         TF1 fApp("fApp", "pol2", 0.0, 8.0e3);
         graphPolN.Fit(&fApp, "RQ0");
-        auto carbonPos{getCarbonPos(histsSg.at(i).get(), fApp.GetX(4438.0))};
-        _energyPeaks.at(i).push_back(EnergyPeak(EnergyPeak::Id::CARBON, carbonPos));
-        graphPolN.SetPoint(3, carbonPos, 4438.0);
-        _calib  = (4438.0 - _offset) / carbonPos;
+//        auto carbonPos{getCarbonPos(histsSg.at(i).get(), fApp.GetX(4438.0))};
+//        _energyPeaks.at(i).push_back(EnergyPeak(EnergyPeak::Id::CARBON, carbonPos));
+//        graphPolN.SetPoint(3, carbonPos, 4438.0);
+//        _calib  = (4438.0 - _offset) / carbonPos;
         graphPolN.Fit(&fApp, "RQ0");
         auto oxygenPos{getOxygenPos(histsSg.at(i).get(), fApp.GetX(6129.0))};
         _energyPeaks.at(i).push_back(EnergyPeak(EnergyPeak::Id::OXYGEN, oxygenPos));
-        graphPolN.SetPoint(4, oxygenPos, 6129.0);
+        graphPolN.SetPoint(3, oxygenPos, 6129.0);
         _calib  = (6129.0 - _offset) / oxygenPos;
         auto fe7631Pos{getFerrum7631Pos(histsRc.at(i).get(), 0.0)};
         _energyPeaks.at(i).push_back(EnergyPeak(EnergyPeak::Id::FE7631, fe7631Pos));
