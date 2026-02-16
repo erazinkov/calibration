@@ -27,7 +27,7 @@ void process(const std::string fileName)
     const auto pre = ChannelMap::mapTMP();
     Decoder decoder(fileName, pre);
 
-    auto r = decoder.events();
+    auto r = decoder.events_3_p();
     auto c = decoder.counters();
 
     for (const auto &item : c.rawhits)

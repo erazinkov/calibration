@@ -38,6 +38,8 @@ void Decoder::process()
     counters_.rawhits.resize(map_.map().size());
 
     events_.clear();
+    events_3_p_.clear();
+
 
     stor_packet_hdr_t hdr;
     stor_ev_hdr_t ev;
@@ -83,27 +85,32 @@ void Decoder::process()
                 ifs_.ignore(hdr.size);
                 continue;
             }
-            std::unique_ptr<stor_puls_t> g{std::make_unique<stor_puls_t>(stor_puls_t())};
+            std::unique_ptr<stor_puls_t> g_1{std::make_unique<stor_puls_t>(stor_puls_t())};
+            std::unique_ptr<stor_puls_t> g_2{std::make_unique<stor_puls_t>(stor_puls_t())};
             std::unique_ptr<stor_puls_t> a{std::make_unique<stor_puls_t>(stor_puls_t())};
-            ifs_ >> *g.get() >> *a.get();
+            ifs_ >> *g_1.get() >> *g_2.get() >> *a.get();
 
-            auto idxGamma{map_.getIdxByHardwareIdx(g.get()->ch)};
+            auto idxGamma_1{map_.getIdxByHardwareIdx(g_1.get()->ch)};
+            auto idxGamma_2{map_.getIdxByHardwareIdx(g_2.get()->ch)};
             auto idxAlpha{map_.getIdxByHardwareIdx(a.get()->ch)};
-            if (idxGamma.has_value() && idxAlpha.has_value())
+            if (idxGamma_1.has_value() && idxGamma_2.has_value() && idxAlpha.has_value())
             {
-                dec_ev_t event;
-                event.g.index = idxGamma.value();
-                event.g.amp = g.get()->a;
+                dec_ev_t_3_p event;
+                event.g_1.index = idxGamma_1.value();
+                event.g_1.amp = g_1.get()->a;
+                event.g_2.index = idxGamma_2.value();
+                event.g_2.amp = g_1.get()->a;
                 event.a.index = idxAlpha.value();
                 event.a.amp = a.get()->a;
-                event.tdc = g.get()->t - a.get()->t;
+                event.tdc_1 = g_1.get()->t - a.get()->t;
+                event.tdc_2 = g_2.get()->t - a.get()->t;
                 double currentTs{static_cast<double>(ev.ts)};
                 event.ts = currentTs;
                 if (isIntegerOverflow(event.ts, prevTs) && events_.size()) {
                     event.ts += UINT32_MAX;
                 }
                 prevTs = event.ts;
-                events_.push_back(event);
+                events_3_p_.push_back(event);
             }
 //            if (g->ch < _map.map().size() && a->ch < _map.map().size())
 //            {
@@ -168,6 +175,11 @@ void Decoder::process()
         ifs_.seekg(1 - static_cast<long long>(sizeof(stor_packet_hdr_t)), std::ios_base::cur);
     }
     ifs_.close();
+}
+
+const std::vector<dec_ev_t_3_p> &Decoder::events_3_p() const
+{
+    return events_3_p_;
 }
 
 
