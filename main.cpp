@@ -39,7 +39,7 @@ void process(const std::string fileName)
     if (!r.empty())
     {
         std::cout << "Events: " << r.size() << std::endl;
-//        Calibration calibration(path.stem().string(), pre, r);
+        Calibration calibration(path.stem().string(), pre, r);
     }
 }
 
@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
 {
 //    QCoreApplication a(argc, argv);
     auto start = std::chrono::steady_clock::now();
-    process("/home/egor/shares/tmp/data_3_p/data_3_p_1");
+    process("/home/egor/shares/tmp/data_3_p/data_3_p_123");
     auto stop = std::chrono::steady_clock::now();
     std::cout << "Total time elapsed, ms: " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << std::endl;
 

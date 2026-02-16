@@ -83,7 +83,7 @@ struct dec_det_t
 } __attribute__ ((packed));
 
 struct dec_ev_t
-{    
+{
     double ts;    // timestamp, 10 ns step
     float tdc;      // delta time = gamma_time - alpha_time
     dec_det_t a;    // alpha detector

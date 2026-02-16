@@ -11,7 +11,7 @@ Decoder::Decoder(const std::string &fileName, const ChannelMap &pre)
     process();
 }
 
-std::vector<dec_ev_t> &Decoder::events()
+std::vector<dec_ev_t_3_p> &Decoder::events()
 {
     return events_;
 }
@@ -93,23 +93,24 @@ void Decoder::process()
             auto idxGamma_1{map_.getIdxByHardwareIdx(g_1.get()->ch)};
             auto idxGamma_2{map_.getIdxByHardwareIdx(g_2.get()->ch)};
             auto idxAlpha{map_.getIdxByHardwareIdx(a.get()->ch)};
+
             if (idxGamma_1.has_value() && idxGamma_2.has_value() && idxAlpha.has_value())
             {
                 dec_ev_t_3_p event;
                 event.g_1.index = idxGamma_1.value();
                 event.g_1.amp = g_1.get()->a;
                 event.g_2.index = idxGamma_2.value();
-                event.g_2.amp = g_1.get()->a;
+                event.g_2.amp = g_2.get()->a;
                 event.a.index = idxAlpha.value();
                 event.a.amp = a.get()->a;
                 event.tdc_1 = g_1.get()->t - a.get()->t;
                 event.tdc_2 = g_2.get()->t - a.get()->t;
-                double currentTs{static_cast<double>(ev.ts)};
-                event.ts = currentTs;
-                if (isIntegerOverflow(event.ts, prevTs) && events_.size()) {
-                    event.ts += UINT32_MAX;
-                }
-                prevTs = event.ts;
+//                double currentTs{static_cast<double>(ev.ts)};
+//                event.ts = currentTs;
+//                if (isIntegerOverflow(event.ts, prevTs) && events_.size()) {
+//                    event.ts += UINT32_MAX;
+//                }
+//                prevTs = event.ts;
                 events_3_p_.push_back(event);
             }
 //            if (g->ch < _map.map().size() && a->ch < _map.map().size())

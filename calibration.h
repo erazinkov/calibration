@@ -17,7 +17,7 @@
 class Calibration
 {
 public:
-    Calibration(const std::string &fileName, const ChannelMap &map, std::vector<dec_ev_t> &events);
+    Calibration(const std::string &fileName, const ChannelMap &map, std::vector<dec_ev_t_3_p> &events);
     ~Calibration();
     void process();
 
@@ -33,15 +33,17 @@ public:
     static inline constexpr double XUP_CHANNEL{4.0e3};
     static inline constexpr double XUP_ENERGY{8.0e3};
 
+    static inline constexpr int REFERENCE_GAMMA_INDEX{4};
+
 private:
     std::string fileName_;
 //    std::unique_ptr<TimePeaksFinder> _timePeaksFinder;
     std::unique_ptr<TimePeaksFinder> timePeaksFinder_;
     std::unique_ptr<HistogramManager> histogramManager_;
     const ChannelMap map_;
-    const std::vector<dec_ev_t> events_;
+    const std::vector<dec_ev_t_3_p> events_;
 
-    std::vector<dec_ev_t> selectedEvents(uint8_t idxGamma, u_int8_t idxAlpha);
+    std::vector<dec_ev_t> selectedEvents(uint8_t idxGamma_1, u_int8_t idxAlpha);
 
     void fillHistTime(const std::vector<dec_ev_t> &events, TH1 *h, double);
 
@@ -73,6 +75,7 @@ private:
     void processTimeWithEnergyCut();
     void processAlphaCh();
     void processGammaCh();
+    void processGammaCh1();
     void processGammaEnergy();
     void processGammaEnergyTime();
 

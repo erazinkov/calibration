@@ -8,7 +8,7 @@ class Decoder
 {
 public:
     Decoder(const std::string &, const ChannelMap &);
-    std::vector<dec_ev_t> & events();
+    std::vector<dec_ev_t_3_p> & events();
     dec_cnt_t & counters();
     void process();
     const std::vector<dec_ev_t_3_p> &events_3_p() const;
@@ -18,7 +18,7 @@ private:
     std::string fileName_;
     std::ifstream ifs_;
     ChannelMap map_;
-    std::vector<dec_ev_t> events_;
+    std::vector<dec_ev_t_3_p> events_;
     dec_cnt_t counters_;
 
     std::vector<dec_ev_t_3_p> events_3_p_;

@@ -15,11 +15,11 @@
 
 #include "utils.h"
 
-Calibration::Calibration(const std::string &fileName, const ChannelMap &map, std::vector<dec_ev_t> &events)
+Calibration::Calibration(const std::string &fileName, const ChannelMap &map, std::vector<dec_ev_t_3_p> &events)
     : fileName_(fileName), map_(map), events_(events)
 {   
-    idxsGamma_ = map.getIdxsByType(Channel::GAMMA);
-    idxsAlpha_ = map.getIdxsByType(Channel::ALPHA);
+    idxsGamma_ = map.getIdxsByType(Channel::ALPHA);
+    idxsAlpha_ = map.getIdxsByType(Channel::GAMMA);
 
     timePeaksFinder_ = std::make_unique<TimePeaksFinder>(map_);
     histogramManager_ = std::make_unique<HistogramManager>();
@@ -37,24 +37,65 @@ void Calibration::process()
 //    processTimeStamp();
     processTime();
 //    processAlphaCh();
-    processGammaCh();
-//    processGammaEnergyTime();
+    processGammaCh1();
+    processGammaEnergyTime();
 //    processGammaEnergy();
-   processTimeWithEnergyCut();
-   processGammaEnergyTime1();
+//   processTimeWithEnergyCut();
+//   processGammaEnergyTime1();
 }
+
+//21845
+//20681
+//15393
+//14238
+//3004
+//16453
+//7798
+//16124
+//14840
+//10499
+//10655
+//9222
+//6420
+//0
 
 std::vector<dec_ev_t> Calibration::selectedEvents(uint8_t idxGamma, u_int8_t idxAlpha)
 {
     std::vector<dec_ev_t> selectedEvents{};
     auto it{events_.begin()};
 
-    while ( (it = std::find_if(it, events_.end(), [&idxGamma, &idxAlpha](dec_ev_t e){
-                               return e.g.index == idxGamma && e.a.index == idxAlpha;
+    while ( (it = std::find_if(it, events_.end(), [&idxGamma, &idxAlpha](dec_ev_t_3_p e){
+                               return (e.g_1.index == idxGamma || e.g_2.index == idxGamma) && e.a.index == idxAlpha;
     })) != events_.end() ) {
-        selectedEvents.push_back(*it);
+        dec_ev_t event;
+        auto e = *it;
+        auto index = e.g_1.index == idxGamma ? e.g_1.index : e.g_2.index;
+        event.g.index = index;
+        auto g_amp = e.g_1.index == idxGamma ? e.g_1.amp : e.g_2.amp;
+        event.g.amp = g_amp;
+        event.a.index = e.a.index;
+        event.a.amp = e.a.amp;
+        auto g_tdc = e.g_1.index == idxGamma ? e.tdc_1 : e.tdc_2;
+        event.tdc = g_tdc;
+        selectedEvents.push_back(event);
         ++it;
     }
+//    while ( (it = std::find_if(it, events_.end(), [&idxGamma, &idxAlpha](dec_ev_t_3_p e){
+//                               return ((e.g_1.index == idxGamma && e.g_2.index == REFERENCE_GAMMA_INDEX) || (e.g_1.index == REFERENCE_GAMMA_INDEX && e.g_2.index == idxGamma)) && e.a.index == idxAlpha;
+//    })) != events_.end() ) {
+//        dec_ev_t event;
+//        auto e = *it;
+//        auto index = e.g_1.index == REFERENCE_GAMMA_INDEX ? e.g_2.index : e.g_1.index;
+//        event.g.index = index;
+//        auto g_amp = e.g_1.index == REFERENCE_GAMMA_INDEX ? e.g_2.amp : e.g_1.amp;
+//        event.g.amp = g_amp;
+//        event.a.index = e.a.index;
+//        event.a.amp = e.a.amp;
+//        auto g_tdc = e.g_1.index == REFERENCE_GAMMA_INDEX ? e.tdc_2 : e.tdc_1;
+//        event.tdc = g_tdc;
+//        selectedEvents.push_back(event);
+//        ++it;
+//    }
     return selectedEvents;
 }
 
@@ -74,26 +115,26 @@ void Calibration::fillHistTimeWithEnergyCut(const std::vector<dec_ev_t> &events,
                                             bool exclude,
                                             TF1 f)
 {
-    for (const auto & item : events)
-    {
-        auto t{static_cast<double>(item.tdc)};
-//        auto e{f.Eval(static_cast<double>(item.g.amp))};
-        auto e{static_cast<double>(item.g.amp)};
-        if (exclude)
-        {
-            if (e < minE || maxE < e)
-            {
-                h->Fill(t - offsetT);
-            }
-        }
-        else
-        {
-            if (minE <= e && e <= maxE)
-            {
-                h->Fill(t - offsetT);
-            }
-        }
-    }
+//    for (const auto & item : events)
+//    {
+//        auto t{static_cast<double>(item.tdc)};
+////        auto e{f.Eval(static_cast<double>(item.g.amp))};
+//        auto e{static_cast<double>(item.g.amp)};
+//        if (exclude)
+//        {
+//            if (e < minE || maxE < e)
+//            {
+//                h->Fill(t - offsetT);
+//            }
+//        }
+//        else
+//        {
+//            if (minE <= e && e <= maxE)
+//            {
+//                h->Fill(t - offsetT);
+//            }
+//        }
+//    }
 }
 
 void Calibration::fillHistEnergyTimeWithTimeCut(const std::vector<dec_ev_t> &events,
@@ -103,26 +144,26 @@ void Calibration::fillHistEnergyTimeWithTimeCut(const std::vector<dec_ev_t> &eve
                                             bool exclude,
                                             TF1 f)
 {
-    for (const auto & item : events)
-    {
-        auto t{static_cast<double>(item.tdc)};
-//        auto e{f.Eval(static_cast<double>(item.g.amp))};
-        auto e{static_cast<double>(item.g.amp)};
-        if (exclude)
-        {
-            if (t < minT || maxT < t)
-            {
-                h->Fill(e, t);
-            }
-        }
-        else
-        {
-            if (minT <= t && t <= maxT)
-            {
-                h->Fill(e, t);
-            }
-        }
-    }
+//    for (const auto & item : events)
+//    {
+//        auto t{static_cast<double>(item.tdc)};
+////        auto e{f.Eval(static_cast<double>(item.g.amp))};
+//        auto e{static_cast<double>(item.g.amp)};
+//        if (exclude)
+//        {
+//            if (t < minT || maxT < t)
+//            {
+//                h->Fill(e, t);
+//            }
+//        }
+//        else
+//        {
+//            if (minT <= t && t <= maxT)
+//            {
+//                h->Fill(e, t);
+//            }
+//        }
+//    }
 }
 
 void Calibration::fillHistEnergyTime(const std::vector<dec_ev_t> &events, TH2 *h, double offsetT, TF1 f)
@@ -134,6 +175,7 @@ void Calibration::fillHistEnergyTime(const std::vector<dec_ev_t> &events, TH2 *h
         auto e{static_cast<double>(item.g.amp)};
 //        auto e{static_cast<double>(item.a.amp)};
         h->Fill(e, t - offsetT);
+
     }
 }
 
@@ -143,21 +185,42 @@ void Calibration::fillHistChannel(const std::vector<dec_ev_t> &events, TH1 *h, d
     {
         auto t{static_cast<double>(item.tdc)};
         auto e{static_cast<double>(item.g.amp)};
-        if (exclude)
-        {
-            if (t < minT || maxT < t)
-            {
-                h->Fill(e);
-            }
-        }
-        else
-        {
-            if (minT <= t && t <= maxT)
-            {
-                h->Fill(e);
-            }
-        }
+//        if (exclude)
+//        {
+//            if (t < minT || maxT < t)
+//            {
+//                h->Fill(e);
+//            }
+//        }
+//        else
+//        {
+//            if (minT <= t && t <= maxT)
+//            {
+//                h->Fill(e);
+//            }
+//        }
+        h->Fill(e);
     }
+
+//    for (const auto & item : events)
+//    {
+//        auto t{static_cast<double>(item.tdc)};
+//        auto e{static_cast<double>(item.g.amp)};
+//        if (exclude)
+//        {
+//            if (t < minT || maxT < t)
+//            {
+//                h->Fill(e);
+//            }
+//        }
+//        else
+//        {
+//            if (minT <= t && t <= maxT)
+//            {
+//                h->Fill(e);
+//            }
+//        }
+//    }
 }
 
 void Calibration::fillHistChannelA(const std::vector<dec_ev_t> &events, TH1 *h)
@@ -171,25 +234,25 @@ void Calibration::fillHistChannelA(const std::vector<dec_ev_t> &events, TH1 *h)
 
 void Calibration::fillHistEnergy(const std::vector<dec_ev_t> &events, TH1 *h, double minT, double maxT, bool exclude, TF1 f)
 {
-    for (const auto & item : events)
-    {
-        auto t{static_cast<double>(item.tdc)};
-        auto e{static_cast<double>(item.g.amp)};
-        if (exclude)
-        {
-            if (t < minT || maxT < t)
-            {
-                h->Fill(f.Eval(e));
-            }
-        }
-        else
-        {
-            if (minT <= t && t <= maxT)
-            {
-                h->Fill(f.Eval(e));
-            }
-        }
-    }
+//    for (const auto & item : events)
+//    {
+//        auto t{static_cast<double>(item.tdc)};
+//        auto e{static_cast<double>(item.g.amp)};
+//        if (exclude)
+//        {
+//            if (t < minT || maxT < t)
+//            {
+//                h->Fill(f.Eval(e));
+//            }
+//        }
+//        else
+//        {
+//            if (minT <= t && t <= maxT)
+//            {
+//                h->Fill(f.Eval(e));
+//            }
+//        }
+//    }
 }
 
 void Calibration::processTime()
@@ -223,67 +286,67 @@ void Calibration::processTime()
         {
             for (size_t j{0}; j <  hists.at(i).size(); ++j)
             {
+                std::cout << hists.at(i).at(j).get()->Integral() << std::endl;
                 hists.at(i).at(j).get()->Write(hists.at(i).at(j).get()->GetName(), TObject::kOverwrite);
             }
         }
     }
 
-   timePeaksFinder_.get()->calculatePeaksPos(hists);
 
+//   timePeaksFinder_.get()->calculatePeaksPos(hists);
 
+////   timePeaksFinder_.get()->readPeaksPosFromFile("time_peak_pos_c_12_new.txt");
+////    timePeaksFinder_.get()->readPeaksPosFromFile("time_peak_pos_c12_bez_nijnej_zaschity.txt");
+////    timePeaksFinder_.get()->writePeaksPosToFile("time_peak_pos_c12_bez_nijnej_zaschity.txt");
 
-//   timePeaksFinder_.get()->readPeaksPosFromFile("time_peak_pos_c_12_new.txt");
-//    timePeaksFinder_.get()->readPeaksPosFromFile("time_peak_pos_c12_bez_nijnej_zaschity.txt");
-//    timePeaksFinder_.get()->writePeaksPosToFile("time_peak_pos_c12_bez_nijnej_zaschity.txt");
+////   timePeaksFinder_.get()->readPeaksPosFromFile("time_peak_pos_c12_bez_nijnej_zaschity_w_energy_cut.txt");
+////   timePeaksFinder_.get()->writePeaksPosToFile("time_peak_pos_c12_bez_nijnej_zaschity_w_energy_cut_check.txt");
+////   timePeaksFinder_.get()->writePeaksPosToFile("time_peak_pos_sugar_emptiness_1.txt");
+////   timePeaksFinder_.get()->readPeaksPosFromFile("time_peak_pos_sugar_emptiness_1.txt");
 
-//   timePeaksFinder_.get()->readPeaksPosFromFile("time_peak_pos_c12_bez_nijnej_zaschity_w_energy_cut.txt");
-//   timePeaksFinder_.get()->writePeaksPosToFile("time_peak_pos_c12_bez_nijnej_zaschity_w_energy_cut_check.txt");
-//   timePeaksFinder_.get()->writePeaksPosToFile("time_peak_pos_sugar_emptiness_1.txt");
-//   timePeaksFinder_.get()->readPeaksPosFromFile("time_peak_pos_sugar_emptiness_1.txt");
+//   auto hists_{histogramManager_->createHistograms("histTimeU", BINS_TIME, XLOW_TIME, XUP_TIME, idxsGamma_, idxsAlpha_)};
 
-   auto hists_{histogramManager_->createHistograms("histTimeU", BINS_TIME, XLOW_TIME, XUP_TIME, idxsGamma_, idxsAlpha_)};
+//   for (size_t i{0}; i < hists_.size(); ++i)
+//   {
+//       for (size_t j{0}; j <  hists_.at(i).size(); ++j)
+//       {
+//           tasks.push_back([this, &hists_, i, j](){
+//               auto sE{selectedEvents(static_cast<u_int8_t>(idxsGamma_.at(i)), static_cast<u_int8_t>(idxsAlpha_.at(j)))};
+//               fillHistTime(sE, hists_.at(i).at(j).get(), timePeaksFinder_.get()->timePeaksPos().at(i).at(j));
+//           });
+//       }
+//   }
+//   func_async(tasks.begin(), tasks.end());
+//   tasks.clear();
 
-   for (size_t i{0}; i < hists_.size(); ++i)
-   {
-       for (size_t j{0}; j <  hists_.at(i).size(); ++j)
-       {
-           tasks.push_back([this, &hists_, i, j](){
-               auto sE{selectedEvents(static_cast<u_int8_t>(idxsGamma_.at(i)), static_cast<u_int8_t>(idxsAlpha_.at(j)))};
-               fillHistTime(sE, hists_.at(i).at(j).get(), timePeaksFinder_.get()->timePeaksPos().at(i).at(j));
-           });
-       }
-   }
-   func_async(tasks.begin(), tasks.end());
-   tasks.clear();
+//   auto histsTimeAlpha{histogramManager_->createHistograms("histTimeAlpha", BINS_TIME, XLOW_TIME, XUP_TIME, idxsAlpha_)};
+//   for (size_t i{0}; i < hists_.size(); ++i)
+//   {
+//       for (size_t j{0}; j <  hists_.at(i).size(); ++j)
+//       {
+//           histsTimeAlpha.at(j).get()->Add(hists_.at(i).at(j).get());
+//       }
+//   }
+//   const std::string outputFileName{"output_time_" + fileName_ + ".root"};
+//   std::unique_ptr<TFile> file{TFile::Open((outputFileName).c_str(), "RECREATE")};
+//   if (file.get())
+//   {
+//       for (auto &item : histsTimeAlpha)
+//       {
+//           item.get()->Write(item.get()->GetName(), TObject::kOverwrite);
+//       }
+//       for (size_t i{0}; i < hists_.size(); ++i)
+//       {
+//           for (size_t j{0}; j <  hists_.at(i).size(); ++j)
+//           {
+//               hists_.at(i).at(j).get()->Write(hists_.at(i).at(j).get()->GetName(), TObject::kOverwrite);
+//           }
+//       }
+//   }
 
-   auto histsTimeAlpha{histogramManager_->createHistograms("histTimeAlpha", BINS_TIME, XLOW_TIME, XUP_TIME, idxsAlpha_)};
-   for (size_t i{0}; i < hists_.size(); ++i)
-   {
-       for (size_t j{0}; j <  hists_.at(i).size(); ++j)
-       {
-           histsTimeAlpha.at(j).get()->Add(hists_.at(i).at(j).get());
-       }
-   }
-   const std::string outputFileName{"output_time_" + fileName_ + ".root"};
-   std::unique_ptr<TFile> file{TFile::Open((outputFileName).c_str(), "RECREATE")};
-   if (file.get())
-   {
-       for (auto &item : histsTimeAlpha)
-       {
-           item.get()->Write(item.get()->GetName(), TObject::kOverwrite);
-       }
-       for (size_t i{0}; i < hists_.size(); ++i)
-       {
-           for (size_t j{0}; j <  hists_.at(i).size(); ++j)
-           {
-               hists_.at(i).at(j).get()->Write(hists_.at(i).at(j).get()->GetName(), TObject::kOverwrite);
-           }
-       }
-   }
-
-    histogramManager_->printToPsFile("time", hists);
-    histogramManager_->printToPsFile("timeAlpha", histsTimeAlpha);
-//    _histogramManager->printToPsFile("time_1", hists.at(0).at(0));
+//    histogramManager_->printToPsFile("time", hists);
+//    histogramManager_->printToPsFile("timeAlpha", histsTimeAlpha);
+////    _histogramManager->printToPsFile("time_1", hists.at(0).at(0));
 
 }
 
@@ -400,6 +463,40 @@ void Calibration::processAlphaCh()
     }
 }
 
+void Calibration::processGammaCh1()
+{
+    auto histsSg{histogramManager_->createHistograms("histSg", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, idxsGamma_, idxsAlpha_)};
+
+    std::vector<std::function<void()>> tasks;
+    for (size_t i{0}; i < histsSg.size(); ++i)
+    {
+        for (size_t j{0}; j <  histsSg.at(i).size(); ++j)
+        {
+            tasks.push_back([this, i, j, &histsSg] () {
+                auto sE{selectedEvents(static_cast<u_int8_t>(idxsGamma_.at(i)), static_cast<u_int8_t>(idxsAlpha_.at(j)))};
+                fillHistChannel(sE, histsSg.at(i).at(j).get(), 0.0, 0.0, false);
+            });
+        }
+    }
+    func_async(tasks.begin(), tasks.end());
+    tasks.clear();
+
+
+    const std::string outputFileNameTmp{"output_channel_raw_" + fileName_ + ".root"};
+    std::unique_ptr<TFile> fileTmp{TFile::Open((outputFileNameTmp).c_str(), "RECREATE")};
+    if (fileTmp.get())
+    {
+        for (size_t i{0}; i < histsSg.size(); ++i)
+        {
+            for (size_t j{0}; j <  histsSg.at(i).size(); ++j)
+            {
+                std::cout << histsSg.at(i).at(j).get()->Integral() << std::endl;
+                histsSg.at(i).at(j).get()->Write(histsSg.at(i).at(j).get()->GetName(), TObject::kOverwrite);
+            }
+        }
+    }
+}
+
 void Calibration::processGammaCh()
 {
     auto histsSg{histogramManager_->createHistograms("histSg", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, idxsGamma_, idxsAlpha_)};
@@ -448,6 +545,7 @@ void Calibration::processGammaCh()
     energyPeaks_ = peakFinder.energyPeaks();
 
 }
+
 
 void Calibration::processGammaEnergy()
 {
@@ -608,7 +706,8 @@ void Calibration::processGammaEnergyTime()
     std::vector<TF1> fs;
     for (size_t i{0}; i < hists.size(); ++i)
     {
-        PiecewiseLinearFunction fObj(energyPeaks_.at(i));
+//        PiecewiseLinearFunction fObj(energyPeaks_.at(i));
+        PiecewiseLinearFunction fObj({EnergyPeak(EnergyPeak::Id::CARBON, 1500.0)});
         TF1 f("f", fObj, XLOW_CHANNEL, XUP_CHANNEL, 0);
         fs.push_back(f);
     }
