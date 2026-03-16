@@ -33,7 +33,7 @@ public:
     static inline constexpr double XUP_CHANNEL{4.0e3};
     static inline constexpr double XUP_ENERGY{8.0e3};
 
-    static inline constexpr int REFERENCE_GAMMA_INDEX{4};
+    static inline constexpr int REFERENCE_GAMMA_INDEX{8};
 
 private:
     std::string fileName_;

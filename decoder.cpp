@@ -103,8 +103,8 @@ void Decoder::process()
                 event.g_2.amp = g_2.get()->a;
                 event.a.index = idxAlpha.value();
                 event.a.amp = a.get()->a;
-                event.tdc_1 = g_1.get()->t - a.get()->t;
-                event.tdc_2 = g_2.get()->t - a.get()->t;
+                event.tdc_1 =  a.get()->t - g_1.get()->t;
+                event.tdc_2 =  a.get()->t - g_2.get()->t;
 //                double currentTs{static_cast<double>(ev.ts)};
 //                event.ts = currentTs;
 //                if (isIntegerOverflow(event.ts, prevTs) && events_.size()) {
