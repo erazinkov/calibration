@@ -33,7 +33,7 @@ public:
     static inline constexpr double XUP_CHANNEL{4.0e3};
     static inline constexpr double XUP_ENERGY{8.0e3};
 
-    static inline constexpr int REFERENCE_GAMMA_INDEX{8};
+    static inline constexpr int REFERENCE_GAMMA_INDEX{12};
 
 private:
     std::string fileName_;
@@ -67,6 +67,11 @@ private:
                             double offsetT,
                             TF1 f);
 
+    void fillHistEnergyEnergy(const std::vector<dec_ev_t> &events,
+                            TH2 *h,
+                            double offsetT,
+                            TF1 f);
+
     void fillHistChannel(const std::vector<dec_ev_t> &events, TH1 *h, double minT, double maxT, bool exclude);
     void fillHistChannelA(const std::vector<dec_ev_t> &events, TH1 *h);
     void fillHistEnergy(const std::vector<dec_ev_t> &events, TH1 *h, double minT, double maxT, bool exclude, TF1 f);
@@ -80,6 +85,8 @@ private:
     void processGammaEnergyTime();
 
     void processGammaEnergyTime1();
+
+    void processGammaEnergyEnergy();
 
     std::vector<std::vector<EnergyPeak>>  energyPeaks_;
 

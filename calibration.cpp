@@ -39,47 +39,51 @@ void Calibration::process()
 //    processAlphaCh();
     processGammaCh1();
     processGammaEnergyTime();
+//    processGammaEnergyEnergy();
 //    processGammaEnergy();
 //   processTimeWithEnergyCut();
 //   processGammaEnergyTime1();
 }
-
-//21845
-//20681
-//15393
-//14238
-//3004
-//16453
-//7798
-//16124
-//14840
-//10499
-//10655
-//9222
-//6420
-//0
 
 std::vector<dec_ev_t> Calibration::selectedEvents(uint8_t idxGamma, u_int8_t idxAlpha)
 {
     std::vector<dec_ev_t> selectedEvents{};
     auto it{events_.begin()};
 
+//    while ( (it = std::find_if(it, events_.end(), [&idxGamma, &idxAlpha](dec_ev_t_3_p e){
+//                               return (e.g_1.index == idxGamma || e.g_2.index == idxGamma) && e.a.index == idxAlpha;
+//    })) != events_.end() ) {
+//        dec_ev_t event;
+//        auto e = *it;
+//        auto index = e.g_1.index == idxGamma ? e.g_1.index : e.g_2.index;
+//        event.g.index = index;
+//        auto g_amp = e.g_1.index == idxGamma ? e.g_1.amp : e.g_2.amp;
+//        event.g.amp = g_amp;
+//        event.a.index = e.a.index;
+//        event.a.amp = e.a.amp;
+//        auto g_tdc = e.g_1.index == idxGamma ? e.tdc_1 : e.tdc_2;
+//        event.tdc = g_tdc;
+//        selectedEvents.push_back(event);
+//        ++it;
+//    }
     while ( (it = std::find_if(it, events_.end(), [&idxGamma, &idxAlpha](dec_ev_t_3_p e){
-                               return (e.g_1.index == idxGamma || e.g_2.index == idxGamma) && e.a.index == idxAlpha;
+                               return ((e.g_1.index == idxGamma && e.g_2.index == REFERENCE_GAMMA_INDEX) || (e.g_1.index == REFERENCE_GAMMA_INDEX && e.g_2.index == idxGamma)) && e.a.index == idxAlpha;
     })) != events_.end() ) {
         dec_ev_t event;
         auto e = *it;
-        auto index = e.g_1.index == idxGamma ? e.g_1.index : e.g_2.index;
+        auto index = e.g_1.index == REFERENCE_GAMMA_INDEX ? e.g_2.index : e.g_1.index;
         event.g.index = index;
-        auto g_amp = e.g_1.index == idxGamma ? e.g_1.amp : e.g_2.amp;
+        auto g_amp = e.g_1.index == REFERENCE_GAMMA_INDEX ? e.g_2.amp : e.g_1.amp;
         event.g.amp = g_amp;
         event.a.index = e.a.index;
         event.a.amp = e.a.amp;
-        auto g_tdc = e.g_1.index == idxGamma ? e.tdc_1 : e.tdc_2;
+        auto g_tdc = e.g_1.index == REFERENCE_GAMMA_INDEX ? e.tdc_2 : e.tdc_1;
         event.tdc = g_tdc;
         selectedEvents.push_back(event);
         ++it;
     }
+
+    // energy - energy
 //    while ( (it = std::find_if(it, events_.end(), [&idxGamma, &idxAlpha](dec_ev_t_3_p e){
 //                               return ((e.g_1.index == idxGamma && e.g_2.index == REFERENCE_GAMMA_INDEX) || (e.g_1.index == REFERENCE_GAMMA_INDEX && e.g_2.index == idxGamma)) && e.a.index == idxAlpha;
 //    })) != events_.end() ) {
@@ -90,12 +94,54 @@ std::vector<dec_ev_t> Calibration::selectedEvents(uint8_t idxGamma, u_int8_t idx
 //        auto g_amp = e.g_1.index == REFERENCE_GAMMA_INDEX ? e.g_2.amp : e.g_1.amp;
 //        event.g.amp = g_amp;
 //        event.a.index = e.a.index;
-//        event.a.amp = e.a.amp;
+//        auto g_amp_ = e.g_1.index == REFERENCE_GAMMA_INDEX ? e.g_1.amp : e.g_2.amp;
+//        event.a.amp = g_amp_;
 //        auto g_tdc = e.g_1.index == REFERENCE_GAMMA_INDEX ? e.tdc_2 : e.tdc_1;
 //        event.tdc = g_tdc;
 //        selectedEvents.push_back(event);
 //        ++it;
 //    }
+//    std::cout << static_cast<int>(idxGamma) << " " << REFERENCE_GAMMA_INDEX << " " << selectedEvents.size() << std::endl;
+
+
+
+    // energy sum
+
+//        while ( (it = std::find_if(it, events_.end(), [&idxGamma, &idxAlpha](dec_ev_t_3_p e){
+//                                   return ((e.g_1.index == idxGamma && e.g_2.index == REFERENCE_GAMMA_INDEX) || (e.g_1.index == REFERENCE_GAMMA_INDEX && e.g_2.index == idxGamma)) && e.a.index == idxAlpha;
+//        })) != events_.end() ) {
+//            dec_ev_t event;
+//            auto e = *it;
+//            auto index = e.g_1.index == REFERENCE_GAMMA_INDEX ? e.g_2.index : e.g_1.index;
+//            event.g.index = index;
+//            auto g_amp = e.g_2.amp + e.g_1.amp;
+////            auto g_amp = e.g_1.index == REFERENCE_GAMMA_INDEX ? e.g_2.amp : e.g_1.amp;
+//            event.g.amp = g_amp;
+//            event.a.index = e.a.index;
+//            event.a.amp = e.a.amp;
+//            auto g_tdc = e.g_1.index == REFERENCE_GAMMA_INDEX ? e.tdc_2 : e.tdc_1;
+//            event.tdc = g_tdc;
+//            selectedEvents.push_back(event);
+//            ++it;
+//        }
+
+//        while ( (it = std::find_if(it, events_.end(), [&idxGamma, &idxAlpha](dec_ev_t_3_p e){
+//                                   return (e.g_1.index == idxGamma || e.g_2.index == idxGamma) && e.a.index == idxAlpha;
+//        })) != events_.end() ) {
+//            dec_ev_t event;
+//            auto e = *it;
+//            auto index = e.g_1.index == idxGamma ? e.g_1.index : e.g_2.index;
+//            event.g.index = index;
+////            auto g_amp = e.g_1.index == idxGamma ? e.g_1.amp : e.g_2.amp;
+//            auto g_amp = e.g_2.amp + e.g_1.amp;
+//            event.g.amp = g_amp;
+//            event.a.index = e.a.index;
+//            event.a.amp = e.a.amp;
+//            auto g_tdc = e.g_1.index == idxGamma ? e.tdc_1 : e.tdc_2;
+//            event.tdc = g_tdc;
+//            selectedEvents.push_back(event);
+//            ++it;
+//        }
     return selectedEvents;
 }
 
@@ -173,8 +219,27 @@ void Calibration::fillHistEnergyTime(const std::vector<dec_ev_t> &events, TH2 *h
         auto t{static_cast<double>(item.tdc)};
 //        auto e{f.Eval(static_cast<double>(item.g.amp))};
         auto e{static_cast<double>(item.g.amp)};
+//        if (-55.0 < t && t < -45.0) {
 //        auto e{static_cast<double>(item.a.amp)};
         h->Fill(e, t - offsetT);
+//        }
+
+    }
+}
+
+void Calibration::fillHistEnergyEnergy(const std::vector<dec_ev_t> &events, TH2 *h, double offsetT, TF1 f)
+{
+    for (const auto & item : events)
+    {
+//        auto t{static_cast<double>(item.tdc)};
+//        auto e{f.Eval(static_cast<double>(item.g.amp))};
+
+            auto e_{static_cast<double>(item.a.amp)};
+            auto e{static_cast<double>(item.g.amp)};
+            h->Fill(e, e_);
+
+//        auto e{static_cast<double>(item.a.amp)};
+
 
     }
 }
@@ -199,7 +264,9 @@ void Calibration::fillHistChannel(const std::vector<dec_ev_t> &events, TH1 *h, d
 //                h->Fill(e);
 //            }
 //        }
-        h->Fill(e);
+        if (-55.0 < t && t < -45.0) {
+            h->Fill(e);
+        }
     }
 
 //    for (const auto & item : events)
@@ -481,8 +548,7 @@ void Calibration::processGammaCh1()
     func_async(tasks.begin(), tasks.end());
     tasks.clear();
 
-
-    const std::string outputFileNameTmp{"output_channel_raw_" + fileName_ + ".root"};
+    const std::string outputFileNameTmp{"output_sum_channel_raw_" + fileName_ + ".root"};
     std::unique_ptr<TFile> fileTmp{TFile::Open((outputFileNameTmp).c_str(), "RECREATE")};
     if (fileTmp.get())
     {
@@ -731,6 +797,51 @@ void Calibration::processGammaEnergyTime()
 
 
     const std::string outputFileName{"output_et_" + fileName_ + "_raw.root"};
+    std::unique_ptr<TFile> file{TFile::Open((outputFileName).c_str(), "RECREATE")};
+    if (file.get())
+    {
+        for (size_t i{0}; i < hists.size(); ++i)
+        {
+            for (size_t j{0}; j <  hists.at(i).size(); ++j)
+            {
+                hists.at(i).at(j).get()->Write(hists.at(i).at(j).get()->GetName(), TObject::kOverwrite);
+            }
+        }
+    }
+}
+
+void Calibration::processGammaEnergyEnergy()
+{
+    auto hists(histogramManager_->createHistograms("histChannelChannel", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, idxsGamma_, idxsAlpha_));
+
+    std::vector<TF1> fs;
+    for (size_t i{0}; i < hists.size(); ++i)
+    {
+//        PiecewiseLinearFunction fObj(energyPeaks_.at(i));
+        PiecewiseLinearFunction fObj({EnergyPeak(EnergyPeak::Id::CARBON, 1500.0)});
+        TF1 f("f", fObj, XLOW_CHANNEL, XUP_CHANNEL, 0);
+        fs.push_back(f);
+    }
+
+    std::vector<std::function<void()>> tasks;
+    for (size_t i{0}; i < hists.size(); ++i)
+    {
+        for (size_t j{0}; j <  hists.at(i).size(); ++j)
+        {
+            tasks.push_back([this, &hists, i, j, &fs](){
+                auto sE{selectedEvents(static_cast<u_int8_t>(idxsGamma_.at(i)), static_cast<u_int8_t>(idxsAlpha_.at(j)))};
+                fillHistEnergyEnergy(sE,
+                                   hists.at(i).at(j).get(),
+                                   0.0,
+                                   fs.at(i));
+            });
+        }
+    }
+    func_async(tasks.begin(), tasks.end());
+    tasks.clear();
+
+
+    const std::string outputFileName{"output_ee_" + fileName_ + "_raw.root"};
     std::unique_ptr<TFile> file{TFile::Open((outputFileName).c_str(), "RECREATE")};
     if (file.get())
     {
