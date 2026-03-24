@@ -38,7 +38,7 @@ void Calibration::process()
     processTime();
 //    processAlphaCh();
     processGammaCh1();
-    processGammaEnergyTime();
+//    processGammaEnergyTime();
 //    processGammaEnergyEnergy();
 //    processGammaEnergy();
 //   processTimeWithEnergyCut();
@@ -50,6 +50,54 @@ std::vector<dec_ev_t> Calibration::selectedEvents(uint8_t idxGamma, u_int8_t idx
     std::vector<dec_ev_t> selectedEvents{};
     auto it{events_.begin()};
 
+    const float minChannel{200.0};
+    const float minTime{-50.0};
+    const float maxTime{-40.0};
+
+    std::vector<dec_ev_t_3_p> selectedEvents_{};
+
+    while ( (it = std::find_if(it, events_.end(), [&idxGamma, &idxAlpha](dec_ev_t_3_p e){
+                               return ((e.g_1.index == idxGamma && e.g_2.index == REFERENCE_GAMMA_INDEX) || (e.g_1.index == REFERENCE_GAMMA_INDEX && e.g_2.index == idxGamma)) && e.a.index == idxAlpha;
+    })) != events_.end() ) {
+        auto e = *it;
+        auto g_amp = e.g_1.index == REFERENCE_GAMMA_INDEX ? e.g_2.amp : e.g_1.amp;
+        auto g_tdc = e.g_1.index == REFERENCE_GAMMA_INDEX ? e.tdc_2 : e.tdc_1;
+        if (minTime < g_tdc && g_tdc < maxTime) {
+            selectedEvents_.push_back(e);
+        }
+        ++it;
+    }
+
+    auto itSelected{selectedEvents_.begin()};
+
+    while ( itSelected != selectedEvents_.end() ) {
+        auto e = *itSelected;
+        dec_ev_t event;
+        auto index = e.g_1.index == REFERENCE_GAMMA_INDEX ? e.g_1.index : e.g_2.index;
+        event.g.index = index;
+
+        auto index_1 = e.g_1.index == REFERENCE_GAMMA_INDEX ? e.g_1.index : e.g_2.index;
+        auto index_2 = e.g_1.index == REFERENCE_GAMMA_INDEX ? e.g_2.index : e.g_1.index;
+
+        auto g_amp_1 = e.g_1.index == REFERENCE_GAMMA_INDEX ? e.g_1.amp : e.g_2.amp;
+        auto g_amp_2 = e.g_1.index == REFERENCE_GAMMA_INDEX ? e.g_2.amp : e.g_1.amp;
+
+        auto g_amp = g_amp_2 * 4438.0 / carbonPeakChannel.at(index_2);
+//        auto g_amp = g_amp_1 * 4438.0 / carbonPeakChannel.at(index_1)  + g_amp_2 * 4438.0 / carbonPeakChannel.at(index_2);
+//        auto g_amp = e.g_1.amp + e.g_2.amp;
+//        auto g_amp = e.g_1.index == REFERENCE_GAMMA_INDEX ? e.g_1.amp : e.g_2.amp;
+        event.g.amp = g_amp;
+        event.a.index = e.a.index;
+        event.a.amp = e.a.amp;
+        auto g_tdc = e.g_1.index == REFERENCE_GAMMA_INDEX ? e.tdc_1 : e.tdc_2;
+        event.tdc = g_tdc;
+        selectedEvents.push_back(event);
+        ++itSelected;
+    }
+
+
+
+
 //    while ( (it = std::find_if(it, events_.end(), [&idxGamma, &idxAlpha](dec_ev_t_3_p e){
 //                               return (e.g_1.index == idxGamma || e.g_2.index == idxGamma) && e.a.index == idxAlpha;
 //    })) != events_.end() ) {
@@ -58,7 +106,7 @@ std::vector<dec_ev_t> Calibration::selectedEvents(uint8_t idxGamma, u_int8_t idx
 //        auto index = e.g_1.index == idxGamma ? e.g_1.index : e.g_2.index;
 //        event.g.index = index;
 //        auto g_amp = e.g_1.index == idxGamma ? e.g_1.amp : e.g_2.amp;
-//        event.g.amp = g_amp;
+//        event.g.amp = g_amp * 4438.0 / carbonPeakChannel.at(index);
 //        event.a.index = e.a.index;
 //        event.a.amp = e.a.amp;
 //        auto g_tdc = e.g_1.index == idxGamma ? e.tdc_1 : e.tdc_2;
@@ -66,22 +114,23 @@ std::vector<dec_ev_t> Calibration::selectedEvents(uint8_t idxGamma, u_int8_t idx
 //        selectedEvents.push_back(event);
 //        ++it;
 //    }
-    while ( (it = std::find_if(it, events_.end(), [&idxGamma, &idxAlpha](dec_ev_t_3_p e){
-                               return ((e.g_1.index == idxGamma && e.g_2.index == REFERENCE_GAMMA_INDEX) || (e.g_1.index == REFERENCE_GAMMA_INDEX && e.g_2.index == idxGamma)) && e.a.index == idxAlpha;
-    })) != events_.end() ) {
-        dec_ev_t event;
-        auto e = *it;
-        auto index = e.g_1.index == REFERENCE_GAMMA_INDEX ? e.g_2.index : e.g_1.index;
-        event.g.index = index;
-        auto g_amp = e.g_1.index == REFERENCE_GAMMA_INDEX ? e.g_2.amp : e.g_1.amp;
-        event.g.amp = g_amp;
-        event.a.index = e.a.index;
-        event.a.amp = e.a.amp;
-        auto g_tdc = e.g_1.index == REFERENCE_GAMMA_INDEX ? e.tdc_2 : e.tdc_1;
-        event.tdc = g_tdc;
-        selectedEvents.push_back(event);
-        ++it;
-    }
+
+//    while ( (it = std::find_if(it, events_.end(), [&idxGamma, &idxAlpha](dec_ev_t_3_p e){
+//                               return ((e.g_1.index == idxGamma && e.g_2.index == REFERENCE_GAMMA_INDEX) || (e.g_1.index == REFERENCE_GAMMA_INDEX && e.g_2.index == idxGamma)) && e.a.index == idxAlpha;
+//    })) != events_.end() ) {
+//        dec_ev_t event;
+//        auto e = *it;
+//        auto index = e.g_1.index == REFERENCE_GAMMA_INDEX ? e.g_2.index : e.g_1.index;
+//        event.g.index = index;
+//        auto g_amp = e.g_1.index == REFERENCE_GAMMA_INDEX ? e.g_2.amp : e.g_1.amp;
+//        event.g.amp = g_amp;
+//        event.a.index = e.a.index;
+//        event.a.amp = e.a.amp;
+//        auto g_tdc = e.g_1.index == REFERENCE_GAMMA_INDEX ? e.tdc_2 : e.tdc_1;
+//        event.tdc = g_tdc;
+//        selectedEvents.push_back(event);
+//        ++it;
+//    }
 
     // energy - energy
 //    while ( (it = std::find_if(it, events_.end(), [&idxGamma, &idxAlpha](dec_ev_t_3_p e){
@@ -219,10 +268,8 @@ void Calibration::fillHistEnergyTime(const std::vector<dec_ev_t> &events, TH2 *h
         auto t{static_cast<double>(item.tdc)};
 //        auto e{f.Eval(static_cast<double>(item.g.amp))};
         auto e{static_cast<double>(item.g.amp)};
-//        if (-55.0 < t && t < -45.0) {
 //        auto e{static_cast<double>(item.a.amp)};
         h->Fill(e, t - offsetT);
-//        }
 
     }
 }
@@ -264,9 +311,9 @@ void Calibration::fillHistChannel(const std::vector<dec_ev_t> &events, TH1 *h, d
 //                h->Fill(e);
 //            }
 //        }
-        if (-55.0 < t && t < -45.0) {
+//        if (-55.0 < t && t < -45.0) {
             h->Fill(e);
-        }
+//        }
     }
 
 //    for (const auto & item : events)
@@ -532,7 +579,8 @@ void Calibration::processAlphaCh()
 
 void Calibration::processGammaCh1()
 {
-    auto histsSg{histogramManager_->createHistograms("histSg", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, idxsGamma_, idxsAlpha_)};
+//    auto histsSg{histogramManager_->createHistograms("histSg", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, idxsGamma_, idxsAlpha_)};
+    auto histsSg{histogramManager_->createHistograms("histSg", BINS_ENERGY, XLOW_ENERGY, XUP_ENERGY, idxsGamma_, idxsAlpha_)};
 
     std::vector<std::function<void()>> tasks;
     for (size_t i{0}; i < histsSg.size(); ++i)
@@ -548,7 +596,7 @@ void Calibration::processGammaCh1()
     func_async(tasks.begin(), tasks.end());
     tasks.clear();
 
-    const std::string outputFileNameTmp{"output_sum_channel_raw_" + fileName_ + ".root"};
+    const std::string outputFileNameTmp{"output_channel_raw_" + fileName_ + ".root"};
     std::unique_ptr<TFile> fileTmp{TFile::Open((outputFileNameTmp).c_str(), "RECREATE")};
     if (fileTmp.get())
     {
@@ -767,7 +815,9 @@ void Calibration::processGammaEnergyTime1()
 
 void Calibration::processGammaEnergyTime()
 {
-    auto hists(histogramManager_->createHistograms("histChannelTime", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, BINS_TIME, XLOW_TIME, XUP_TIME, idxsGamma_, idxsAlpha_));
+//    auto hists(histogramManager_->createHistograms("histChannelTime", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, BINS_TIME, XLOW_TIME, XUP_TIME, idxsGamma_, idxsAlpha_));
+
+    auto hists(histogramManager_->createHistograms("histChannelTime", BINS_ENERGY, XLOW_ENERGY, XUP_ENERGY, BINS_TIME, XLOW_TIME, XUP_TIME, idxsGamma_, idxsAlpha_));
 
     std::vector<TF1> fs;
     for (size_t i{0}; i < hists.size(); ++i)

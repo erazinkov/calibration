@@ -35,6 +35,10 @@ public:
 
     static inline constexpr int REFERENCE_GAMMA_INDEX{12};
 
+    static inline const std::vector<double> carbonPeakChannel{
+        855, 845, 845, 825, 865, 855, 855, 855, 755, 775, 865, 895, 805, 785
+    };
+
 private:
     std::string fileName_;
 //    std::unique_ptr<TimePeaksFinder> _timePeaksFinder;
