@@ -51,9 +51,9 @@ std::vector<dec_ev_t> Calibration::selectedEvents(uint8_t idxGamma, u_int8_t idx
     auto it{events_.begin()};
 
     const float minChannel{200.0};
-    const float minEnergy{0.0};
-    const float minTime{-50.0};
-    const float maxTime{-40.0};
+    const float minEnergy{511.0};
+    const float minTime{-65.0};
+    const float maxTime{-55.0};
 
     std::vector<dec_ev_t_3_p> selectedEvents_{};
 
@@ -61,9 +61,14 @@ std::vector<dec_ev_t> Calibration::selectedEvents(uint8_t idxGamma, u_int8_t idx
                                return ((e.g_1.index == idxGamma && e.g_2.index == REFERENCE_GAMMA_INDEX) || (e.g_1.index == REFERENCE_GAMMA_INDEX && e.g_2.index == idxGamma)) && e.a.index == idxAlpha;
     })) != events_.end() ) {
         auto e = *it;
-        auto g_amp = e.g_1.index == REFERENCE_GAMMA_INDEX ? e.g_2.amp : e.g_1.amp;
+        auto index_1 = e.g_1.index == REFERENCE_GAMMA_INDEX ? e.g_2.index : e.g_1.index;
+        auto index_2 = e.g_1.index == REFERENCE_GAMMA_INDEX ? e.g_1.index : e.g_2.index;
+        auto g_amp_1 = e.g_1.index == REFERENCE_GAMMA_INDEX ? e.g_2.amp : e.g_1.amp;
+        auto g_amp_2 = e.g_1.index == REFERENCE_GAMMA_INDEX ? e.g_1.amp : e.g_2.amp;
         auto g_tdc = e.g_1.index == REFERENCE_GAMMA_INDEX ? e.tdc_2 : e.tdc_1;
-        if (g_amp * 4438.0 / carbonPeakChannel.at(e.g_1.index == REFERENCE_GAMMA_INDEX ? e.g_2.index : e.g_1.index) > minEnergy && (minTime < g_tdc && g_tdc < maxTime)) {
+        if ((g_amp_1 * 4438.0 / carbonPeakChannel.at(index_1) > minEnergy) &&
+                (g_amp_2 * 4438.0 / carbonPeakChannel.at(index_2) > minEnergy) &&
+                (minTime < g_tdc && g_tdc < maxTime)) {
 //        if (minTime < g_tdc && g_tdc < maxTime) {
             selectedEvents_.push_back(e);
         }
@@ -90,8 +95,8 @@ std::vector<dec_ev_t> Calibration::selectedEvents(uint8_t idxGamma, u_int8_t idx
 //        auto g_amp = e.g_1.index == REFERENCE_GAMMA_INDEX ? e.g_1.amp : e.g_2.amp;
         event.g.amp = g_amp;
         event.a.index = e.a.index;
-        event.a.amp = e.a.amp;
-//        event.a.amp = g_amp_1 * 4438.0 / carbonPeakChannel.at(index_1);
+//        event.a.amp = e.a.amp;
+        event.a.amp = g_amp_1 * 4438.0 / carbonPeakChannel.at(index_1);
         auto g_tdc = e.g_1.index == REFERENCE_GAMMA_INDEX ? e.tdc_1 : e.tdc_2;
         event.tdc = g_tdc;
         selectedEvents.push_back(event);
