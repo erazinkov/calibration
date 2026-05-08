@@ -36,9 +36,9 @@ void Calibration::process()
 {
 //    processTimeStamp();
     processTime();
-    processGammaCh();
-    processGammaEnergyTime();
-    processGammaEnergy();
+//    processGammaCh();
+//    processGammaEnergyTime();
+//    processGammaEnergy();
 //   processTimeWithEnergyCut();
 }
 
@@ -192,13 +192,13 @@ void Calibration::processTime()
 
 //   timePeaksFinder_.get()->readPeaksPosFromFile("time_peak_pos_c_12_new.txt");
 //    timePeaksFinder_.get()->readPeaksPosFromFile("time_peak_pos_c12_bez_nijnej_zaschity.txt");
-//    timePeaksFinder_.get()->writePeaksPosToFile("time_peak_pos_c12_bez_nijnej_zaschity.txt");
+//    timePeaksFinder_.get()->writePeaksPosToFile("time_peak_pospulp_sahar2kg_47cm_emptiness_new_1.txt");
 
 //   timePeaksFinder_.get()->readPeaksPosFromFile("time_peak_pos_c12_bez_nijnej_zaschity_w_energy_cut.txt");
 //   timePeaksFinder_.get()->writePeaksPosToFile("time_peak_pos_c12_bez_nijnej_zaschity_w_energy_cut_check.txt");
 //   timePeaksFinder_.get()->writePeaksPosToFile("time_peak_pos_sugar_emptiness_1.txt");
 //   timePeaksFinder_.get()->readPeaksPosFromFile("time_peak_pos_sugar_emptiness_1.txt");
-
+//    timePeaksFinder_.get()->readPeaksPosFromFile("time_peak_pospulp_sahar2kg_47cm_emptiness_new_1.txt");
    auto hists_{_histogramManager->createHistograms("histTimeU", BINS_TIME, XLOW_TIME, XUP_TIME, _idxsGamma, _idxsAlpha)};
 
    for (size_t i{0}; i < hists_.size(); ++i)
@@ -378,7 +378,7 @@ void Calibration::processGammaEnergy()
 //    }
     // load calibration
 //    const std::string inputFileName{"calibration_functions_" + fileName_ + ".root"};
-    const std::string inputFileName{"calibration_functions_sugar_sulfur_1.root"};
+    const std::string inputFileName{"calibration_functions_pulp_sahar2kg_47cm_emptiness_new_1.root"};
     std::unique_ptr<TFile> inputFile{TFile::Open((inputFileName).c_str(), "READ")};
     if (inputFile.get())
     {
@@ -516,7 +516,8 @@ void Calibration::processGammaEnergyTime()
 
     // load calibration
 //    const std::string inputFileName{"calibration_functions_" + fileName_ + ".root"};
-    const std::string inputFileName{"calibration_functions_sugar_sulfur_1.root"};
+//    const std::string inputFileName{"calibration_functions_sugar_sulfur_1.root"};
+    const std::string inputFileName{"calibration_functions_pulp_sahar2kg_47cm_emptiness_new_1.root"};
     std::unique_ptr<TFile> inputFile{TFile::Open((inputFileName).c_str(), "READ")};
     if (inputFile.get())
     {
