@@ -17,7 +17,7 @@
 class Calibration
 {
 public:
-    Calibration(const std::string &fileName, const ChannelMap &map, std::vector<dec_ev_t> &events);
+    Calibration(const std::string &fileName, const ChannelMap &map, std::vector<dec_ev_2p_t> &events);
     ~Calibration();
     void process();
 
@@ -39,13 +39,13 @@ private:
     std::unique_ptr<TimePeaksFinder> timePeaksFinder_;
     std::unique_ptr<HistogramManager> _histogramManager;
     const ChannelMap _map;
-    const std::vector<dec_ev_t> _events;
+    const std::vector<dec_ev_2p_t> _events;
 
-    std::vector<dec_ev_t> selectedEvents(uint8_t idxGamma, u_int8_t idxAlpha);
+    std::vector<dec_ev_2p_t> selectedEvents(uint8_t idxGamma, u_int8_t idxAlpha);
 
-    void fillHistTime(const std::vector<dec_ev_t> &events, TH1 *h, double);
+    void fillHistTime(const std::vector<dec_ev_2p_t> &events, TH1 *h, double);
 
-    void fillHistTimeWithEnergyCut(const std::vector<dec_ev_t> &events,
+    void fillHistTimeWithEnergyCut(const std::vector<dec_ev_2p_t> &events,
                                    TH1 *h,
                                    double offsetT,
                                    double minE,
@@ -53,13 +53,13 @@ private:
                                    bool exclude,
                                    TF1 f);
 
-    void fillHistEnergyTime(const std::vector<dec_ev_t> &events,
+    void fillHistEnergyTime(const std::vector<dec_ev_2p_t> &events,
                             TH2 *h,
                             double offsetT,
                             TF1 f);
 
-    void fillHistChannel(const std::vector<dec_ev_t> &events, TH1 *h, double minT, double maxT, bool exclude);
-    void fillHistEnergy(const std::vector<dec_ev_t> &events, TH1 *h, double minT, double maxT, bool exclude, TF1 f);
+    void fillHistChannel(const std::vector<dec_ev_2p_t> &events, TH1 *h, double minT, double maxT, bool exclude);
+    void fillHistEnergy(const std::vector<dec_ev_2p_t> &events, TH1 *h, double minT, double maxT, bool exclude, TF1 f);
 
     void processTime();
     void processTimeWithEnergyCut();

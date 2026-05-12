@@ -15,7 +15,7 @@
 
 #include "utils.h"
 
-Calibration::Calibration(const std::string &fileName, const ChannelMap &map, std::vector<dec_ev_t> &events)
+Calibration::Calibration(const std::string &fileName, const ChannelMap &map, std::vector<dec_ev_2p_t> &events)
     : fileName_(fileName), _map(map), _events(events)
 {   
     _idxsGamma = map.getIdxsByType(Channel::GAMMA);
@@ -42,12 +42,12 @@ void Calibration::process()
 //   processTimeWithEnergyCut();
 }
 
-std::vector<dec_ev_t> Calibration::selectedEvents(uint8_t idxGamma, u_int8_t idxAlpha)
+std::vector<dec_ev_2p_t> Calibration::selectedEvents(uint8_t idxGamma, u_int8_t idxAlpha)
 {
-    std::vector<dec_ev_t> selectedEvents{};
+    std::vector<dec_ev_2p_t> selectedEvents{};
     auto it{_events.begin()};
 
-    while ( (it = std::find_if(it, _events.end(), [&idxGamma, &idxAlpha](dec_ev_t e){
+    while ( (it = std::find_if(it, _events.end(), [&idxGamma, &idxAlpha](dec_ev_2p_t e){
                                return e.g.index == idxGamma && e.a.index == idxAlpha;
     })) != _events.end() ) {
         selectedEvents.push_back(*it);
@@ -56,7 +56,7 @@ std::vector<dec_ev_t> Calibration::selectedEvents(uint8_t idxGamma, u_int8_t idx
     return selectedEvents;
 }
 
-void Calibration::fillHistTime(const std::vector<dec_ev_t> &events, TH1 *h, double offset)
+void Calibration::fillHistTime(const std::vector<dec_ev_2p_t> &events, TH1 *h, double offset)
 {
     for (const auto & item : events)
     {
@@ -64,7 +64,7 @@ void Calibration::fillHistTime(const std::vector<dec_ev_t> &events, TH1 *h, doub
     }
 }
 
-void Calibration::fillHistTimeWithEnergyCut(const std::vector<dec_ev_t> &events,
+void Calibration::fillHistTimeWithEnergyCut(const std::vector<dec_ev_2p_t> &events,
                                             TH1 *h,
                                             double offsetT,
                                             double minE,
@@ -93,7 +93,7 @@ void Calibration::fillHistTimeWithEnergyCut(const std::vector<dec_ev_t> &events,
     }
 }
 
-void Calibration::fillHistEnergyTime(const std::vector<dec_ev_t> &events, TH2 *h, double offsetT, TF1 f)
+void Calibration::fillHistEnergyTime(const std::vector<dec_ev_2p_t> &events, TH2 *h, double offsetT, TF1 f)
 {
     for (const auto & item : events)
     {
@@ -104,7 +104,7 @@ void Calibration::fillHistEnergyTime(const std::vector<dec_ev_t> &events, TH2 *h
     }
 }
 
-void Calibration::fillHistChannel(const std::vector<dec_ev_t> &events, TH1 *h, double minT, double maxT, bool exclude)
+void Calibration::fillHistChannel(const std::vector<dec_ev_2p_t> &events, TH1 *h, double minT, double maxT, bool exclude)
 {
     for (const auto & item : events)
     {
@@ -127,7 +127,7 @@ void Calibration::fillHistChannel(const std::vector<dec_ev_t> &events, TH1 *h, d
     }
 }
 
-void Calibration::fillHistEnergy(const std::vector<dec_ev_t> &events, TH1 *h, double minT, double maxT, bool exclude, TF1 f)
+void Calibration::fillHistEnergy(const std::vector<dec_ev_2p_t> &events, TH1 *h, double minT, double maxT, bool exclude, TF1 f)
 {
     for (const auto & item : events)
     {

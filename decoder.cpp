@@ -11,11 +11,6 @@ Decoder::Decoder(const std::string &fileName, const ChannelMap &pre)
     process();
 }
 
-std::vector<dec_ev_t> &Decoder::events()
-{
-    return events_;
-}
-
 dec_cnt_t &Decoder::counters()
 {
     return counters_;
@@ -37,7 +32,7 @@ void Decoder::process()
     auto number{map_.getIdxsByType(Channel::ALPHA).size() + map_.getIdxsByType(Channel::GAMMA).size()};
     counters_.rawhits.resize(map_.map().size());
 
-    events_.clear();
+    events_2p_.clear();
 
     stor_packet_hdr_t hdr;
     stor_ev_hdr_t ev;
@@ -76,33 +71,58 @@ void Decoder::process()
                 continue;
             }
             ifs_ >> ev;
+            switch (ev.np) {
+            case 2: {
+                stor_puls_t *g = new stor_puls_t();
+                stor_puls_t *a = new stor_puls_t();
+                ifs_ >> *g >> *a;
+                auto idxGamma{map_.getIdxByHardwareIdx(g->ch)};
+                auto idxAlpha{map_.getIdxByHardwareIdx(a->ch)};
+                if (idxGamma.has_value() && idxAlpha.has_value()) {
+                    dec_ev_2p_t event;
+                    event.g.index = idxGamma.value();
+                    event.g.amp = g->a;
+                    event.a.index = idxAlpha.value();
+                    event.a.amp = a->a;
+                    event.tdc = g->t - a->t;
+                    double currentTs{static_cast<double>(ev.ts)};
+                    event.ts = currentTs;
+                    if (isIntegerOverflow(event.ts, prevTs) && events_2p_.size()) {
+                        event.ts += UINT32_MAX;
+                    }
+                    prevTs = event.ts;
+                    events_2p_.push_back(event);
+                }
+                break;
+            }
+            default:
 
-            //
-            std::string key{""};
-            for (auto pIdx = 0; pIdx < ev.np; pIdx++) {
-                stor_puls_t *p = new stor_puls_t();
-                ifs_ >> *p;
-                auto type{map_.map().at(p->ch).type()};
-                switch (type) {
-                    case Channel::ALPHA:
-                        key.append("g");
-                    break;
-                    case Channel::GAMMA:
-                        key.append("a");
-                    break;
-                    case Channel::UNKNOWN:
-                        key.append("u");
-                    break;
-                }
-                delete p;
             }
-            if (key.length()) {
-                if (pulses_.count(key)) {
-                    pulses_.at(key) += 1;
-                } else {
-                    pulses_[key] = 1;
-                }
-            }
+//            std::string key{""};
+//            for (auto pIdx = 0; pIdx < ev.np; pIdx++) {
+//                stor_puls_t *p = new stor_puls_t();
+//                ifs_ >> *p;
+//                auto type{map_.map().at(p->ch).type()};
+//                switch (type) {
+//                    case Channel::ALPHA:
+//                        key.append("g");
+//                    break;
+//                    case Channel::GAMMA:
+//                        key.append("a");
+//                    break;
+//                    case Channel::UNKNOWN:
+//                        key.append("u");
+//                    break;
+//                }
+//                delete p;
+//            }
+//            if (key.length()) {
+//                if (pulses_.count(key)) {
+//                    pulses_.at(key) += 1;
+//                } else {
+//                    pulses_[key] = 1;
+//                }
+//            }
 
             //
 
@@ -201,6 +221,11 @@ void Decoder::process()
 const std::map<std::string, u_int64_t> &Decoder::pulses() const
 {
     return pulses_;
+}
+
+const std::vector<dec_ev_2p_t> &Decoder::events_2p() const
+{
+    return events_2p_;
 }
 
 
