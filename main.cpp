@@ -26,21 +26,24 @@ void process(const std::string fileName)
 //    const auto pre = ChannelMap::mapNAP();
     const auto pre = ChannelMap::mapTMP();
     Decoder decoder(fileName, pre);
-
-    auto r = decoder.events();
-    auto c = decoder.counters();
-
-    for (const auto &item : c.rawhits)
-    {
-        std::cout << item << " ";
+    auto p = decoder.pulses();
+    for (auto it = p.begin(); it != p.end(); ++it) {
+        std::cout << it->first << ": " << it->second << "\n";
     }
-    std::cout << c.time << std::endl;
+//    auto r = decoder.events();
+//    auto c = decoder.counters();
 
-    if (!r.empty())
-    {
-        std::cout << "Events: " << r.size() << std::endl;
-        Calibration calibration(path.stem().string(), pre, r);
-    }
+//    for (const auto &item : c.rawhits)
+//    {
+//        std::cout << item << " ";
+//    }
+//    std::cout << c.time << std::endl;
+
+//    if (!r.empty())
+//    {
+//        std::cout << "Events: " << r.size() << std::endl;
+//        Calibration calibration(path.stem().string(), pre, r);
+//    }
 }
 
 void a(int b) {
@@ -92,7 +95,9 @@ int main(int argc, char *argv[])
 //    process("/home/egor/shares/tmp/c12_2kg_mask_1");
 //    process("/home/egor/shares/tmp/sio2_2kg_mask_1");
 //    process("/home/egor/shares/tmp/s_2kg_mask_1");
-     process("/home/egor/shares/tmp/pulpa/pulp_sahar2kg_47cm_emptiness_new_1");
+//     process("/home/egor/shares/tmp/adcm-test/pulp_sugar8kg_47cm_multipl_2to7_1");
+     process("/home/egor/shares/tmp/adcm-test/pulp_sugar8kg_47cm_multipl_2to7_reversed_1");
+//     process("/home/egor/shares/tmp/pulpa/pulp_sahar2kg_47cm_emptiness_new_1");
 //     process("/home/egor/shares/tmp/pulpa/pulp_emptiness_new_1");
 //    process("/home/egor/shares/tmp/sugar_sulfur_1");
     auto stop = std::chrono::steady_clock::now();

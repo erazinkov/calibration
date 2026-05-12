@@ -17,7 +17,6 @@ public:
     enum EChannelType {
         GAMMA    = FLAG_ACTIVE | FLAG_GAMMA,
         ALPHA    = FLAG_ACTIVE | FLAG_ALPHA,
-        SELF     = FLAG_INACTIVE,
         UNKNOWN  = FLAG_INACTIVE,
     };
     Channel(EChannelType type, std::optional<u_int8_t> index);

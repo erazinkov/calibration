@@ -90,6 +90,14 @@ struct dec_ev_t
     dec_det_t g;    // gamma detector
 } __attribute__ ((packed));
 
+struct dec_ev_3p_t
+{
+    double ts;    // timestamp, 10 ns step
+    float tdc;      // delta time = gamma_time - alpha_time
+    dec_det_t a;    // alpha detector
+    dec_det_t g;    // gamma detector
+} __attribute__ ((packed));
+
 struct dec_cnt_t
 {    
     double time;        // time of count measurement in seconds

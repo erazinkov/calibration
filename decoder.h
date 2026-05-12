@@ -11,6 +11,8 @@ public:
     std::vector<dec_ev_t> & events();
     dec_cnt_t & counters();
     void process();
+    const std::map<std::string, u_int64_t> &pulses() const;
+
 private:
 
     std::string fileName_;
@@ -18,6 +20,7 @@ private:
     ChannelMap map_;
     std::vector<dec_ev_t> events_;
     dec_cnt_t counters_;
+    std::map<std::string, u_int64_t> pulses_;
 
 };
 

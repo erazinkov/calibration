@@ -76,44 +76,51 @@ void Decoder::process()
                 continue;
             }
             ifs_ >> ev;
-            if (ev.np != 2)
-            {
-                hdr.size -= sizeof(stor_packet_hdr_t);
-                hdr.size -= sizeof(stor_ev_hdr_t);
-                ifs_.ignore(hdr.size);
-                continue;
-            }
-            stor_puls_t *g = new stor_puls_t();
-            stor_puls_t *a = new stor_puls_t();
-            ifs_ >> *g >> *a;
 
-
-            auto idxGamma{map_.getIdxByHardwareIdx(g->ch)};
-            auto idxAlpha{map_.getIdxByHardwareIdx(a->ch)};
-            if (idxGamma.has_value() && idxAlpha.has_value())
-            {
-                dec_ev_t event;
-                event.g.index = idxGamma.value();
-                event.g.amp = g->a;
-                event.a.index = idxAlpha.value();
-                event.a.amp = a->a;
-                event.tdc = g->t - a->t;
-                double currentTs{static_cast<double>(ev.ts)};
-                event.ts = currentTs;
-                if (isIntegerOverflow(event.ts, prevTs) && events_.size()) {
-                    event.ts += UINT32_MAX;
+            //
+            std::string key{""};
+            for (auto pIdx = 0; pIdx < ev.np; pIdx++) {
+                stor_puls_t *p = new stor_puls_t();
+                ifs_ >> *p;
+                auto type{map_.map().at(p->ch).type()};
+                switch (type) {
+                    case Channel::ALPHA:
+                        key.append("g");
+                    break;
+                    case Channel::GAMMA:
+                        key.append("a");
+                    break;
+                    case Channel::UNKNOWN:
+                        key.append("u");
+                    break;
                 }
-                prevTs = event.ts;
-                events_.push_back(event);
+                delete p;
             }
-//            if (g->ch < _map.map().size() && a->ch < _map.map().size())
+            if (key.length()) {
+                if (pulses_.count(key)) {
+                    pulses_.at(key) += 1;
+                } else {
+                    pulses_[key] = 1;
+                }
+            }
+
+            //
+
+            continue;
+
+//            stor_puls_t *g = new stor_puls_t();
+//            stor_puls_t *a = new stor_puls_t();
+//            ifs_ >> *g >> *a;
+
+
+//            auto idxGamma{map_.getIdxByHardwareIdx(g->ch)};
+//            auto idxAlpha{map_.getIdxByHardwareIdx(a->ch)};
+//            if (idxGamma.has_value() && idxAlpha.has_value())
 //            {
 //                dec_ev_t event;
-//                auto idxGamma{_map.map().at(g->ch).softwareIndex()};
-//                auto idxAlpha{_map.map().at(a->ch).softwareIndex()};
-//                event.g.index = idxGamma;
+//                event.g.index = idxGamma.value();
 //                event.g.amp = g->a;
-//                event.a.index = idxAlpha;
+//                event.a.index = idxAlpha.value();
 //                event.a.amp = a->a;
 //                event.tdc = g->t - a->t;
 //                double currentTs{static_cast<double>(ev.ts)};
@@ -124,9 +131,27 @@ void Decoder::process()
 //                prevTs = event.ts;
 //                events_.push_back(event);
 //            }
-            delete g;
-            delete a;
-            continue;
+////            if (g->ch < _map.map().size() && a->ch < _map.map().size())
+////            {
+////                dec_ev_t event;
+////                auto idxGamma{_map.map().at(g->ch).softwareIndex()};
+////                auto idxAlpha{_map.map().at(a->ch).softwareIndex()};
+////                event.g.index = idxGamma;
+////                event.g.amp = g->a;
+////                event.a.index = idxAlpha;
+////                event.a.amp = a->a;
+////                event.tdc = g->t - a->t;
+////                double currentTs{static_cast<double>(ev.ts)};
+////                event.ts = currentTs;
+////                if (isIntegerOverflow(event.ts, prevTs) && events_.size()) {
+////                    event.ts += UINT32_MAX;
+////                }
+////                prevTs = event.ts;
+////                events_.push_back(event);
+////            }
+//            delete g;
+//            delete a;
+//            continue;
         }
         if (hdr.id == STOR_ID_CNTR && hdr.size > sizeof(stor_packet_hdr_t))
         {
@@ -171,6 +196,11 @@ void Decoder::process()
         ifs_.seekg(1 - static_cast<long long>(sizeof(stor_packet_hdr_t)), std::ios_base::cur);
     }
     ifs_.close();
+}
+
+const std::map<std::string, u_int64_t> &Decoder::pulses() const
+{
+    return pulses_;
 }
 
 
