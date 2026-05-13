@@ -79,6 +79,7 @@ struct dec_det_t
 {    
     uint8_t index;  // detector index
     float amp;      // detector amplitude
+    float time;
     float rt;       // detector signal raise time
 } __attribute__ ((packed));
 

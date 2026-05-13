@@ -14,6 +14,8 @@ public:
 
     const std::vector<dec_ev_2p_t> &events_2p() const;
 
+    const std::vector<dec_ev_3p_t> &events_3p() const;
+
 private:
 
     std::string fileName_;
