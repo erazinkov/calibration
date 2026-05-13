@@ -8,7 +8,7 @@
 #include <TError.h>
 #include <TFile.h>
 
-HistogramManager::HistogramManager(std::optional<std::string> outputDirectory) : _outputDirectory{outputDirectory}
+HistogramManager::HistogramManager(std::optional<std::string> outputDirectory) : outputDirectory_{outputDirectory}
 {
 
 }
@@ -108,7 +108,7 @@ std::vector<std::shared_ptr<TH2> > HistogramManager::createHistograms(const std:
 void HistogramManager::printToPsFile(const std::string &fileName,
                              std::vector<std::shared_ptr<TH1> > &hists) const
 {
-    const std::string psName{(_outputDirectory.has_value() ? (_outputDirectory.value() + "/") : " ") + fileName + ".ps"};
+    const std::string psName{(outputDirectory_.has_value() ? (outputDirectory_.value() + "/") : " ") + fileName + ".ps"};
     gErrorIgnoreLevel = 3'000;
     std::unique_ptr<TCanvas> c{new TCanvas("c", "c", 1024, 960)};
     c.get()->Print((psName + '[').c_str());
@@ -129,7 +129,7 @@ void HistogramManager::printToPsFile(const std::string &fileName,
 void HistogramManager::printToPsFile(const std::string &fileName,
                              std::vector<std::vector<std::shared_ptr<TH1> > > &hists) const
 {
-    const std::string psName{(_outputDirectory.has_value() ? (_outputDirectory.value() + "/") : " ") + fileName + ".ps"};
+    const std::string psName{(outputDirectory_.has_value() ? (outputDirectory_.value() + "/") : " ") + fileName + ".ps"};
     gErrorIgnoreLevel = 3'000;
     std::unique_ptr<TCanvas> c{new TCanvas("c", "c", 1024, 960)};
     c.get()->Print((psName + '[').c_str());
@@ -185,7 +185,7 @@ void HistogramManager::printToPsFile(const std::string &fileName,
 
 void HistogramManager::printToPsFile(const std::string &fileName, std::shared_ptr<TH1> hist) const
 {
-    const std::string psName{(_outputDirectory.has_value() ? (_outputDirectory.value() + "/") : " ") + fileName + ".ps"};
+    const std::string psName{(outputDirectory_.has_value() ? (outputDirectory_.value() + "/") : " ") + fileName + ".ps"};
     gErrorIgnoreLevel = 3'000;
     std::unique_ptr<TCanvas> c{new TCanvas("c", "c", 1024, 960)};
     c.get()->Print((psName + '[').c_str());
@@ -193,7 +193,7 @@ void HistogramManager::printToPsFile(const std::string &fileName, std::shared_pt
     auto listOfFunctions{hist->GetListOfFunctions()};
     for (auto *item : *listOfFunctions)
     {
-        item->Draw("SAME");
+//        item->Draw("SAME");
     }
     c.get()->Print(psName.c_str());
     c.get()->Print((psName + ']').c_str());
@@ -202,7 +202,7 @@ void HistogramManager::printToPsFile(const std::string &fileName, std::shared_pt
 
 void HistogramManager::saveToRootFile(const std::string &fileName, std::shared_ptr<TH1> hist) const
 {
-    const std::string rootName{(_outputDirectory.has_value() ? (_outputDirectory.value() + "/") : " ") + fileName + ".root"};
+    const std::string rootName{(outputDirectory_.has_value() ? (outputDirectory_.value() + "/") : " ") + fileName + ".root"};
     std::unique_ptr<TFile> file{TFile::Open(rootName.c_str(), "RECREATE")};
     if (file.get()->IsOpen())
     {

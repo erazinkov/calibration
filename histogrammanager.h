@@ -48,7 +48,7 @@ public:
     void saveToRootFile(const std::string &fileName,
                std::shared_ptr<TH1> hist) const;
 private:
-    std::optional<std::string> _outputDirectory;
+    std::optional<std::string> outputDirectory_;
 };
 
 #endif // HISTOGRAMMANAGER_H

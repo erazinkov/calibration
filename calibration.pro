@@ -11,6 +11,7 @@ QMAKE_CXXFLAGS_RELEASE += -O2
 
 SOURCES += \
         calibration2p.cpp \
+        calibration3p.cpp \
         channel.cpp \
         channelmap.cpp \
         decoder.cpp \
@@ -36,6 +37,7 @@ HEADERS += \
     adcm_df.h \
     calibration.h \
     calibration2p.h \
+    calibration3p.h \
     channel.h \
     channelmap.h \
     decoder.h \

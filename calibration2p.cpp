@@ -194,6 +194,7 @@ void Calibration2p::processTime()
            tasks.push_back([this, &hists_, i, j](){
                auto sE{selectedEvents(static_cast<u_int8_t>(_idxsGamma.at(i)), static_cast<u_int8_t>(_idxsAlpha.at(j)))};
                fillHistTime(sE, hists_.at(i).at(j).get(), timePeaksFinder_.get()->timePeaksPos().at(i).at(j));
+//               fillHistTime(sE, hists_.at(i).at(j).get(), 0.0);
            });
        }
    }
@@ -332,7 +333,7 @@ void Calibration2p::processGammaCh()
             histsRcGamma.at(i).get()->Add(histsRc.at(i).at(j).get());
         }
     }
-    PeakFinder peakFinder(_map);
+    PeakFinder peakFinder(map_);
     peakFinder.process(histsSgGamma, histsRcGamma);
     _energyPeaks = peakFinder.energyPeaks();
 

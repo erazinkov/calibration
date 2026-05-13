@@ -25,9 +25,9 @@ public:
 //    ~Calibration2p();
 
 private:
-    std::vector<dec_ev_2p_t> selectedEvents(uint8_t idxGamma, u_int8_t idxAlpha) override;
     void process();
-    void fillHistTime(const std::vector<dec_ev_2p_t> &events, TH1 *h, double);
+    std::vector<dec_ev_2p_t> selectedEvents(uint8_t idxGamma, u_int8_t idxAlpha) override;
+    void fillHistTime(const std::vector<dec_ev_2p_t> &events, TH1 *h, double) override;
 
     void fillHistTimeWithEnergyCut(const std::vector<dec_ev_2p_t> &events,
                                    TH1 *h,

@@ -19,35 +19,35 @@ class Calibration
 {
 public:
     Calibration(const std::string &fileName, const ChannelMap &map, std::vector<T> &events)
-        : fileName_(fileName), _map(map), _events(events)
+        : fileName_(fileName), map_(map), _events(events)
     {
         _idxsGamma = map.getIdxsByType(Channel::GAMMA);
         _idxsAlpha = map.getIdxsByType(Channel::ALPHA);
-        timePeaksFinder_ = std::make_unique<TimePeaksFinder>(_map);
+        timePeaksFinder_ = std::make_unique<TimePeaksFinder>(map_);
         _histogramManager = std::make_unique<HistogramManager>();
     }
     virtual ~Calibration() {}
 
 protected:
-    static inline constexpr int BINS_TIME{400};
+    static inline constexpr int BINS_TIME{800};
     static inline constexpr int BINS_CHANNEL{400};
     static inline constexpr int BINS_ENERGY{640};
 
-    static inline constexpr double XLOW_TIME{-100.0};
+    static inline constexpr double XLOW_TIME{-200.0};
     static inline constexpr double XLOW_CHANNEL{0.0};
     static inline constexpr double XLOW_ENERGY{0.0};
 
-    static inline constexpr double XUP_TIME{100.0};
+    static inline constexpr double XUP_TIME{200.0};
     static inline constexpr double XUP_CHANNEL{4.0e3};
     static inline constexpr double XUP_ENERGY{8.0e3};
 
     const std::vector<T> _events;
     std::string fileName_;
     std::unique_ptr<TimePeaksFinder> timePeaksFinder_;
-    const ChannelMap _map;
+    const ChannelMap map_;
     std::unique_ptr<HistogramManager> _histogramManager;
     virtual std::vector<T> selectedEvents(uint8_t idxGamma, u_int8_t idxAlpha) = 0;
-//    virtual void fillHistTime(const std::vector<T> &events, TH1 *h, double);
+    virtual void fillHistTime(const std::vector<T> &events, TH1 *h, double) = 0;
 
 //    virtual void fillHistTimeWithEnergyCut(const std::vector<T> &events,
 //                                   TH1 *h,

@@ -95,7 +95,7 @@ void TimePeaksFinder::calculatePeaksPos(std::vector<std::vector<TH1 *> > hists)
 
 double TimePeaksFinder::calculatePeakPos(TH1 *hist)
 {
-    hist->Rebin();
+//    hist->Rebin();
     auto timePeakPos{0.0};
 
     auto binMax{hist->GetMaximumBin()};
@@ -180,12 +180,12 @@ double TimePeaksFinder::calculatePeakPos(TH1 *hist)
                        f->GetParameter(10));
     fSn->SetLineColor(kBlue);
 
-    hist->GetListOfFunctions()->Add(fOb);
-    hist->GetListOfFunctions()->Add(fB);
-    hist->GetListOfFunctions()->Add(fSn);
+//    hist->GetListOfFunctions()->Add(fOb);
+//    hist->GetListOfFunctions()->Add(fB);
+//    hist->GetListOfFunctions()->Add(fSn);
 
     timePeakPos = f->GetParameter(1);
-//    timePeakPos = xMax;
+    timePeakPos = xMax;
 
     delete f;
     f = nullptr;

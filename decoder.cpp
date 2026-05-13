@@ -113,7 +113,7 @@ void Decoder::process()
 //                auto idxGamma_1{map_.getIdxByHardwareIdx(g_1->ch)};
 //                auto idxAlpha{map_.getIdxByHardwareIdx(a->ch)};
 //                if (idxGamma_0.has_value() && idxGamma_1.has_value() && idxAlpha.has_value()
-//                        && type_0 == Channel::ALPHA && type_1 == Channel::ALPHA && type_2 == Channel::GAMMA) {
+//                        && type_0 == Channel::GAMMA && type_1 == Channel::GAMMA && type_2 == Channel::ALPHA) {
 //                    dec_ev_3p_t event;
 //                    event.g_0.index = idxGamma_0.value();
 //                    event.g_0.amp = g_0->a;
