@@ -7,7 +7,7 @@
 #include <filesystem>
 
 #include "decoder.h"
-#include "calibration.h"
+#include "calibration2p.h"
 
 //void spinner()
 //{
@@ -33,6 +33,7 @@ void process(const std::string fileName)
     auto r_2p = decoder.events_2p();
     auto r_3p = decoder.events_3p();
     qDebug() << r_2p.size() << r_3p.size();
+    Calibration2p c(path.stem().string(), pre, r_2p);
 //    auto c = decoder.counters();
 
 //    for (const auto &item : c.rawhits)

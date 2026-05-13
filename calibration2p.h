@@ -13,39 +13,20 @@
 #include "timepeaksfinder.h"
 #include "energypeak.h"
 #include "histogrammanager.h"
-#include "eventsselector.h"
+#include "calibration.h"
 
-class Calibration2p
+class Calibration2p : public Calibration<dec_ev_2p_t>
 {
 public:
-    Calibration2p(const std::string &fileName, const ChannelMap &map, std::vector<dec_ev_2p_t> &events_2p);
-    ~Calibration2p();
-    void process();
-
-    static inline constexpr int BINS_TIME{400};
-    static inline constexpr int BINS_CHANNEL{400};
-    static inline constexpr int BINS_ENERGY{640};
-
-    static inline constexpr double XLOW_TIME{-100.0};
-    static inline constexpr double XLOW_CHANNEL{0.0};
-    static inline constexpr double XLOW_ENERGY{0.0};
-
-    static inline constexpr double XUP_TIME{100.0};
-    static inline constexpr double XUP_CHANNEL{4.0e3};
-    static inline constexpr double XUP_ENERGY{8.0e3};
+    Calibration2p(const std::string &fileName, const ChannelMap &map, std::vector<dec_ev_2p_t> &events)
+        : Calibration(fileName, map, events) {
+        process();
+    };
+//    ~Calibration2p();
 
 private:
-    std::string fileName_;
-    std::unique_ptr<TimePeaksFinder> timePeaksFinder_;
-    std::unique_ptr<HistogramManager> _histogramManager;
-    const ChannelMap _map;
-    const std::vector<dec_ev_2p_t> _events;
-
-    std::unique_ptr<EventsSelector<dec_ev_2p_t>> eS;
-
-
-    std::vector<dec_ev_2p_t> selectedEvents(uint8_t idxGamma, u_int8_t idxAlpha);
-
+    std::vector<dec_ev_2p_t> selectedEvents(uint8_t idxGamma, u_int8_t idxAlpha) override;
+    void process();
     void fillHistTime(const std::vector<dec_ev_2p_t> &events, TH1 *h, double);
 
     void fillHistTimeWithEnergyCut(const std::vector<dec_ev_2p_t> &events,
@@ -64,16 +45,12 @@ private:
     void fillHistChannel(const std::vector<dec_ev_2p_t> &events, TH1 *h, double minT, double maxT, bool exclude);
     void fillHistEnergy(const std::vector<dec_ev_2p_t> &events, TH1 *h, double minT, double maxT, bool exclude, TF1 f);
 
+
     void processTime();
     void processTimeWithEnergyCut();
     void processGammaCh();
     void processGammaEnergy();
     void processGammaEnergyTime();
-
-    std::vector<std::vector<EnergyPeak>>  _energyPeaks;
-
-    std::vector<int> _idxsGamma;
-    std::vector<int> _idxsAlpha;
 
 };
 

@@ -5,7 +5,7 @@
 
 ChannelMap::ChannelMap(std::map<u_int8_t, Channel> map)
 {
-    _map = map;
+    map_ = map;
 }
 
 ChannelMap ChannelMap::mapNAP()
@@ -145,9 +145,9 @@ std::vector<int> ChannelMap::getIdxsByType(Channel::EChannelType type) const
 {
     std::vector<int> idxs;
 
-    auto it = _map.begin();
+    auto it = map_.begin();
 
-    while ( (it = std::find_if(it, _map.end(), [&type](std::pair<u_int8_t, Channel> mapItem){return mapItem.second.type() == type;}) ) != _map.end())
+    while ( (it = std::find_if(it, map_.end(), [&type](std::pair<u_int8_t, Channel> mapItem){return mapItem.second.type() == type;}) ) != map_.end())
     {
         if ((*it).second.index().has_value())
         {
@@ -159,18 +159,18 @@ std::vector<int> ChannelMap::getIdxsByType(Channel::EChannelType type) const
 }
 
 bool ChannelMap::isCorrect(std::vector<u_int8_t> &map) const {
-    if (map.size() != _map.size())
+    if (map.size() != map_.size())
     {
         return false;
     }
 
-    for (size_t i{0}; i < _map.size(); ++i)
+    for (size_t i{0}; i < map_.size(); ++i)
     {
-        if (_map.at(static_cast<u_int8_t>(i)).type() == Channel::UNKNOWN)
+        if (map_.at(static_cast<u_int8_t>(i)).type() == Channel::UNKNOWN)
         {
             continue;
         }
-        if ( (map.at(i) & _map.at(static_cast<u_int8_t>(i)).type()) != _map.at(static_cast<u_int8_t>(i)).type() )
+        if ( (map.at(i) & map_.at(static_cast<u_int8_t>(i)).type()) != map_.at(static_cast<u_int8_t>(i)).type() )
         {
             return false;
         }
@@ -180,13 +180,13 @@ bool ChannelMap::isCorrect(std::vector<u_int8_t> &map) const {
 
 const std::map<u_int8_t, Channel> &ChannelMap::map() const
 {
-    return _map;
+    return map_;
 }
 
 std::optional<u_int8_t> ChannelMap::getIdxByHardwareIdx(u_int8_t &hardwareIndex)
 {
-    auto it{_map.find(hardwareIndex)};
-    if (it != _map.end())
+    auto it{map_.find(hardwareIndex)};
+    if (it != map_.end())
     {
         return it->second.index();
     }

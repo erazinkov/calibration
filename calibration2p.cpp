@@ -15,34 +15,18 @@
 
 #include "utils.h"
 
-Calibration2p::Calibration2p(const std::string &fileName, const ChannelMap &map, std::vector<dec_ev_2p_t> &events)
-    : fileName_(fileName), _map(map), _events(events)
-{
-    _idxsGamma = map.getIdxsByType(Channel::GAMMA);
-    _idxsAlpha = map.getIdxsByType(Channel::ALPHA);
-
-    timePeaksFinder_ = std::make_unique<TimePeaksFinder>(_map);
-    _histogramManager = std::make_unique<HistogramManager>();
-
-
-
-    process();
-}
-
-Calibration2p::~Calibration2p()
-{
-
-}
-
 void Calibration2p::process()
 {
-//    processTimeStamp();
+    //    processTimeStamp();
+    std::cout << "Process" << std::endl;
     processTime();
-//    processGammaCh();
-//    processGammaEnergyTime();
-//    processGammaEnergy();
+//    std::cout << _idxsGamma.size() << " " << _idxsAlpha.size() << std::endl;
+    //    processGammaCh();
+    //    processGammaEnergyTime();
+    //    processGammaEnergy();
 //   processTimeWithEnergyCut();
 }
+
 
 std::vector<dec_ev_2p_t> Calibration2p::selectedEvents(uint8_t idxGamma, u_int8_t idxAlpha)
 {
@@ -62,7 +46,7 @@ void Calibration2p::fillHistTime(const std::vector<dec_ev_2p_t> &events, TH1 *h,
 {
     for (const auto & item : events)
     {
-        h->Fill(static_cast<double>(item.tdc) - offset);
+        h->Fill(static_cast<double>(item.g.time - item.a.time) - offset);
     }
 }
 

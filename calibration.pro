@@ -10,7 +10,6 @@ QMAKE_CXXFLAGS_RELEASE += -O2
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-        calibration.cpp \
         calibration2p.cpp \
         channel.cpp \
         channelmap.cpp \
