@@ -1,4 +1,4 @@
-#include "calibration.h"
+#include "calibration2p.h"
 
 #include <TCanvas.h>
 #include <TError.h>
@@ -15,9 +15,9 @@
 
 #include "utils.h"
 
-Calibration::Calibration(const std::string &fileName, const ChannelMap &map, std::vector<dec_ev_2p_t> &events)
+Calibration2p::Calibration2p(const std::string &fileName, const ChannelMap &map, std::vector<dec_ev_2p_t> &events)
     : fileName_(fileName), _map(map), _events(events)
-{   
+{
     _idxsGamma = map.getIdxsByType(Channel::GAMMA);
     _idxsAlpha = map.getIdxsByType(Channel::ALPHA);
 
@@ -29,12 +29,12 @@ Calibration::Calibration(const std::string &fileName, const ChannelMap &map, std
     process();
 }
 
-Calibration::~Calibration()
+Calibration2p::~Calibration2p()
 {
 
 }
 
-void Calibration::process()
+void Calibration2p::process()
 {
 //    processTimeStamp();
     processTime();
@@ -44,7 +44,7 @@ void Calibration::process()
 //   processTimeWithEnergyCut();
 }
 
-std::vector<dec_ev_2p_t> Calibration::selectedEvents(uint8_t idxGamma, u_int8_t idxAlpha)
+std::vector<dec_ev_2p_t> Calibration2p::selectedEvents(uint8_t idxGamma, u_int8_t idxAlpha)
 {
     std::vector<dec_ev_2p_t> selectedEvents{};
     auto it{_events.begin()};
@@ -58,7 +58,7 @@ std::vector<dec_ev_2p_t> Calibration::selectedEvents(uint8_t idxGamma, u_int8_t 
     return selectedEvents;
 }
 
-void Calibration::fillHistTime(const std::vector<dec_ev_2p_t> &events, TH1 *h, double offset)
+void Calibration2p::fillHistTime(const std::vector<dec_ev_2p_t> &events, TH1 *h, double offset)
 {
     for (const auto & item : events)
     {
@@ -66,7 +66,7 @@ void Calibration::fillHistTime(const std::vector<dec_ev_2p_t> &events, TH1 *h, d
     }
 }
 
-void Calibration::fillHistTimeWithEnergyCut(const std::vector<dec_ev_2p_t> &events,
+void Calibration2p::fillHistTimeWithEnergyCut(const std::vector<dec_ev_2p_t> &events,
                                             TH1 *h,
                                             double offsetT,
                                             double minE,
@@ -95,7 +95,7 @@ void Calibration::fillHistTimeWithEnergyCut(const std::vector<dec_ev_2p_t> &even
     }
 }
 
-void Calibration::fillHistEnergyTime(const std::vector<dec_ev_2p_t> &events, TH2 *h, double offsetT, TF1 f)
+void Calibration2p::fillHistEnergyTime(const std::vector<dec_ev_2p_t> &events, TH2 *h, double offsetT, TF1 f)
 {
     for (const auto & item : events)
     {
@@ -106,7 +106,7 @@ void Calibration::fillHistEnergyTime(const std::vector<dec_ev_2p_t> &events, TH2
     }
 }
 
-void Calibration::fillHistChannel(const std::vector<dec_ev_2p_t> &events, TH1 *h, double minT, double maxT, bool exclude)
+void Calibration2p::fillHistChannel(const std::vector<dec_ev_2p_t> &events, TH1 *h, double minT, double maxT, bool exclude)
 {
     for (const auto & item : events)
     {
@@ -129,7 +129,7 @@ void Calibration::fillHistChannel(const std::vector<dec_ev_2p_t> &events, TH1 *h
     }
 }
 
-void Calibration::fillHistEnergy(const std::vector<dec_ev_2p_t> &events, TH1 *h, double minT, double maxT, bool exclude, TF1 f)
+void Calibration2p::fillHistEnergy(const std::vector<dec_ev_2p_t> &events, TH1 *h, double minT, double maxT, bool exclude, TF1 f)
 {
     for (const auto & item : events)
     {
@@ -152,7 +152,7 @@ void Calibration::fillHistEnergy(const std::vector<dec_ev_2p_t> &events, TH1 *h,
     }
 }
 
-void Calibration::processTime()
+void Calibration2p::processTime()
 {
     auto hists{_histogramManager->createHistograms("histTime", BINS_TIME, XLOW_TIME, XUP_TIME, _idxsGamma, _idxsAlpha)};
 
@@ -240,7 +240,7 @@ void Calibration::processTime()
 
 }
 
-void Calibration::processTimeWithEnergyCut()
+void Calibration2p::processTimeWithEnergyCut()
 {
     auto hists{_histogramManager->createHistograms("histTimeWithEnergyCut", BINS_TIME, XLOW_TIME, XUP_TIME, _idxsGamma, _idxsAlpha)};
 
@@ -305,7 +305,7 @@ void Calibration::processTimeWithEnergyCut()
 
 }
 
-void Calibration::processGammaCh()
+void Calibration2p::processGammaCh()
 {
     auto histsSg{_histogramManager->createHistograms("histSg", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, _idxsGamma, _idxsAlpha)};
     auto histsBg{_histogramManager->createHistograms("histBg", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, _idxsGamma, _idxsAlpha)};
@@ -354,7 +354,7 @@ void Calibration::processGammaCh()
 
 }
 
-void Calibration::processGammaEnergy()
+void Calibration2p::processGammaEnergy()
 {
     auto histsSg(_histogramManager->createHistograms("histSg", BINS_ENERGY, XLOW_ENERGY, XUP_ENERGY, _idxsGamma, _idxsAlpha));
     auto histsBg(_histogramManager->createHistograms("histBg", BINS_ENERGY, XLOW_ENERGY, XUP_ENERGY, _idxsGamma, _idxsAlpha));
@@ -504,7 +504,7 @@ void Calibration::processGammaEnergy()
 //    }
 //}
 
-void Calibration::processGammaEnergyTime()
+void Calibration2p::processGammaEnergyTime()
 {
     auto hists(_histogramManager->createHistograms("histEnergyTime", BINS_ENERGY, XLOW_ENERGY, XUP_ENERGY, BINS_TIME, XLOW_TIME, XUP_TIME, _idxsGamma, _idxsAlpha));
 

@@ -1,5 +1,5 @@
-#ifndef CALIBRATION_H
-#define CALIBRATION_H
+#ifndef CALIBRATION2P_H
+#define CALIBRATION2P_H
 
 #include <functional>
 #include <future>
@@ -15,11 +15,11 @@
 #include "histogrammanager.h"
 #include "eventsselector.h"
 
-class Calibration
+class Calibration2p
 {
 public:
-    Calibration(const std::string &fileName, const ChannelMap &map, std::vector<dec_ev_2p_t> &events_2p);
-    ~Calibration();
+    Calibration2p(const std::string &fileName, const ChannelMap &map, std::vector<dec_ev_2p_t> &events_2p);
+    ~Calibration2p();
     void process();
 
     static inline constexpr int BINS_TIME{400};
@@ -77,4 +77,4 @@ private:
 
 };
 
-#endif // CALIBRATION_H
+#endif // CALIBRATION2P_H

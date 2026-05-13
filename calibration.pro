@@ -11,6 +11,7 @@ QMAKE_CXXFLAGS_RELEASE += -O2
 
 SOURCES += \
         calibration.cpp \
+        calibration2p.cpp \
         channel.cpp \
         channelmap.cpp \
         decoder.cpp \
@@ -35,6 +36,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 HEADERS += \
     adcm_df.h \
     calibration.h \
+    calibration2p.h \
     channel.h \
     channelmap.h \
     decoder.h \

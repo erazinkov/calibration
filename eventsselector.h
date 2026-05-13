@@ -12,7 +12,6 @@ public:
     EventsSelector(std::vector<T> events) : events{events} {};
     virtual std::vector<T> selectedEvents(uint8_t idxGamma, u_int8_t idxAlpha) = 0;
     std::vector<T> events;
-
 };
 
 class EventsSelector2p : public EventsSelector<dec_ev_2p_t> {
