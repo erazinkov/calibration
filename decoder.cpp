@@ -81,7 +81,7 @@ void Decoder::process()
                 auto type_1{map_.map().at(a->ch).type()};
                 auto idxGamma{map_.getIdxByHardwareIdx(g->ch)};
                 auto idxAlpha{map_.getIdxByHardwareIdx(a->ch)};
-                if (idxGamma.has_value() && idxAlpha.has_value() && type_0 == Channel::ALPHA && type_1 == Channel::GAMMA) {
+                if (idxGamma.has_value() && idxAlpha.has_value() && type_0 == Channel::GAMMA && type_1 == Channel::ALPHA) {
                     dec_ev_2p_t event;
                     event.g.index = idxGamma.value();
                     event.g.amp = g->a;
@@ -100,40 +100,40 @@ void Decoder::process()
                 }
                 break;
             }
-            case 3:
-            {
-                std::unique_ptr<stor_puls_t> g_0{std::make_unique<stor_puls_t>()};
-                std::unique_ptr<stor_puls_t> g_1{std::make_unique<stor_puls_t>()};
-                std::unique_ptr<stor_puls_t> a{std::make_unique<stor_puls_t>()};
-                ifs_ >> *g_0 >> *g_1 >> *a;
-                auto type_0{map_.map().at(g_0->ch).type()};
-                auto type_1{map_.map().at(g_1->ch).type()};
-                auto type_2{map_.map().at(a->ch).type()};
-                auto idxGamma_0{map_.getIdxByHardwareIdx(g_0->ch)};
-                auto idxGamma_1{map_.getIdxByHardwareIdx(g_1->ch)};
-                auto idxAlpha{map_.getIdxByHardwareIdx(a->ch)};
-                if (idxGamma_0.has_value() && idxGamma_1.has_value() && idxAlpha.has_value()
-                        && type_0 == Channel::ALPHA && type_1 == Channel::ALPHA && type_2 == Channel::GAMMA) {
-                    dec_ev_3p_t event;
-                    event.g_0.index = idxGamma_0.value();
-                    event.g_0.amp = g_0->a;
-                    event.g_1.index = idxGamma_1.value();
-                    event.g_1.amp = g_1->a;
-                    event.a.index = idxAlpha.value();
-                    event.a.amp = a->a;
-                    event.g_0.time = g_0->t;
-                    event.g_1.time = g_1->t;
-                    event.a.time = a->t;
-                    double currentTs{static_cast<double>(ev.ts)};
-                    event.ts = currentTs;
-                    if (isIntegerOverflow(event.ts, prevTs) && events_3p_.size()) {
-                        event.ts += UINT32_MAX;
-                    }
-                    prevTs = event.ts;
-                    events_3p_.push_back(event);
-                }
-                break;
-            }
+//            case 3:
+//            {
+//                std::unique_ptr<stor_puls_t> g_0{std::make_unique<stor_puls_t>()};
+//                std::unique_ptr<stor_puls_t> g_1{std::make_unique<stor_puls_t>()};
+//                std::unique_ptr<stor_puls_t> a{std::make_unique<stor_puls_t>()};
+//                ifs_ >> *g_0 >> *g_1 >> *a;
+//                auto type_0{map_.map().at(g_0->ch).type()};
+//                auto type_1{map_.map().at(g_1->ch).type()};
+//                auto type_2{map_.map().at(a->ch).type()};
+//                auto idxGamma_0{map_.getIdxByHardwareIdx(g_0->ch)};
+//                auto idxGamma_1{map_.getIdxByHardwareIdx(g_1->ch)};
+//                auto idxAlpha{map_.getIdxByHardwareIdx(a->ch)};
+//                if (idxGamma_0.has_value() && idxGamma_1.has_value() && idxAlpha.has_value()
+//                        && type_0 == Channel::ALPHA && type_1 == Channel::ALPHA && type_2 == Channel::GAMMA) {
+//                    dec_ev_3p_t event;
+//                    event.g_0.index = idxGamma_0.value();
+//                    event.g_0.amp = g_0->a;
+//                    event.g_1.index = idxGamma_1.value();
+//                    event.g_1.amp = g_1->a;
+//                    event.a.index = idxAlpha.value();
+//                    event.a.amp = a->a;
+//                    event.g_0.time = g_0->t;
+//                    event.g_1.time = g_1->t;
+//                    event.a.time = a->t;
+//                    double currentTs{static_cast<double>(ev.ts)};
+//                    event.ts = currentTs;
+//                    if (isIntegerOverflow(event.ts, prevTs) && events_3p_.size()) {
+//                        event.ts += UINT32_MAX;
+//                    }
+//                    prevTs = event.ts;
+//                    events_3p_.push_back(event);
+//                }
+//                break;
+//            }
             default:
             {
                 hdr.size -= sizeof(stor_packet_hdr_t);

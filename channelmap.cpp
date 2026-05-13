@@ -59,59 +59,18 @@ ChannelMap ChannelMap::mapNAP()
 //    return ChannelMap(map);
 //}
 
-//ChannelMap ChannelMap::mapTMP()
-//{
-//    std::map<u_int8_t, Channel> map
-//    {
-//        {0, Channel(Channel::GAMMA, 0)},
-//        {1, Channel(Channel::GAMMA, 1)},
-//        {2, Channel(Channel::GAMMA, 2)},
-//        {3, Channel(Channel::GAMMA, 3)},
-//        {4, Channel(Channel::GAMMA, 4)},
-//        {5, Channel(Channel::GAMMA, 5)},
-//        {6, Channel(Channel::GAMMA, 6)},
-//        {7, Channel(Channel::GAMMA, 7)},
-//        {8, Channel(Channel::UNKNOWN, 111)},
-//        {9, Channel(Channel::UNKNOWN, 111)},
-//        {10, Channel(Channel::UNKNOWN, 111)},
-//        {11, Channel(Channel::UNKNOWN, 111)},
-//        {12, Channel(Channel::UNKNOWN, 111)},
-//        {13, Channel(Channel::UNKNOWN, 111)},
-//        {14, Channel(Channel::UNKNOWN, 111)},
-//        {15, Channel(Channel::UNKNOWN, 111)},
-//        {16, Channel(Channel::UNKNOWN, 111)},
-//        {17, Channel(Channel::UNKNOWN, 111)},
-//        {18, Channel(Channel::UNKNOWN, 111)},
-//        {19, Channel(Channel::UNKNOWN, 111)},
-//        {20, Channel(Channel::UNKNOWN, 111)},
-//        {21, Channel(Channel::UNKNOWN, 111)},
-//        {22, Channel(Channel::UNKNOWN, 111)},
-//        {23, Channel(Channel::ALPHA, 0)},
-//        {24, Channel(Channel::ALPHA, 1)},
-//        {25, Channel(Channel::ALPHA, 2)},
-//        {26, Channel(Channel::ALPHA, 3)},
-//        {27, Channel(Channel::ALPHA, 4)},
-//        {28, Channel(Channel::ALPHA, 5)},
-//        {29, Channel(Channel::ALPHA, 6)},
-//        {30, Channel(Channel::ALPHA, 7)},
-//        {31, Channel(Channel::ALPHA, 8)},
-//    };
-
-//    return ChannelMap(map);
-//}
-
 ChannelMap ChannelMap::mapTMP()
 {
     std::map<u_int8_t, Channel> map
     {
-        {0, Channel(Channel::ALPHA, 0)},
-        {1, Channel(Channel::ALPHA, 1)},
-        {2, Channel(Channel::ALPHA, 2)},
-        {3, Channel(Channel::ALPHA, 3)},
-        {4, Channel(Channel::ALPHA, 4)},
-        {5, Channel(Channel::ALPHA, 5)},
-        {6, Channel(Channel::ALPHA, 6)},
-        {7, Channel(Channel::ALPHA, 7)},
+        {0, Channel(Channel::GAMMA, 0)},
+        {1, Channel(Channel::GAMMA, 1)},
+        {2, Channel(Channel::GAMMA, 2)},
+        {3, Channel(Channel::GAMMA, 3)},
+        {4, Channel(Channel::GAMMA, 4)},
+        {5, Channel(Channel::GAMMA, 5)},
+        {6, Channel(Channel::GAMMA, 6)},
+        {7, Channel(Channel::GAMMA, 7)},
         {8, Channel(Channel::UNKNOWN, 111)},
         {9, Channel(Channel::UNKNOWN, 111)},
         {10, Channel(Channel::UNKNOWN, 111)},
@@ -127,19 +86,60 @@ ChannelMap ChannelMap::mapTMP()
         {20, Channel(Channel::UNKNOWN, 111)},
         {21, Channel(Channel::UNKNOWN, 111)},
         {22, Channel(Channel::UNKNOWN, 111)},
-        {23, Channel(Channel::GAMMA, 0)},
-        {24, Channel(Channel::GAMMA, 1)},
-        {25, Channel(Channel::GAMMA, 2)},
-        {26, Channel(Channel::GAMMA, 3)},
-        {27, Channel(Channel::GAMMA, 4)},
-        {28, Channel(Channel::GAMMA, 5)},
-        {29, Channel(Channel::GAMMA, 6)},
-        {30, Channel(Channel::GAMMA, 7)},
-        {31, Channel(Channel::GAMMA, 8)},
+        {23, Channel(Channel::ALPHA, 0)},
+        {24, Channel(Channel::ALPHA, 1)},
+        {25, Channel(Channel::ALPHA, 2)},
+        {26, Channel(Channel::ALPHA, 3)},
+        {27, Channel(Channel::ALPHA, 4)},
+        {28, Channel(Channel::ALPHA, 5)},
+        {29, Channel(Channel::ALPHA, 6)},
+        {30, Channel(Channel::ALPHA, 7)},
+        {31, Channel(Channel::ALPHA, 8)},
     };
 
     return ChannelMap(map);
 }
+
+//ChannelMap ChannelMap::mapTMP()
+//{
+//    std::map<u_int8_t, Channel> map
+//    {
+//        {0, Channel(Channel::ALPHA, 0)},
+//        {1, Channel(Channel::ALPHA, 1)},
+//        {2, Channel(Channel::ALPHA, 2)},
+//        {3, Channel(Channel::ALPHA, 3)},
+//        {4, Channel(Channel::ALPHA, 4)},
+//        {5, Channel(Channel::ALPHA, 5)},
+//        {6, Channel(Channel::ALPHA, 6)},
+//        {7, Channel(Channel::ALPHA, 7)},
+//        {8, Channel(Channel::UNKNOWN, 111)},
+//        {9, Channel(Channel::UNKNOWN, 111)},
+//        {10, Channel(Channel::UNKNOWN, 111)},
+//        {11, Channel(Channel::UNKNOWN, 111)},
+//        {12, Channel(Channel::UNKNOWN, 111)},
+//        {13, Channel(Channel::UNKNOWN, 111)},
+//        {14, Channel(Channel::UNKNOWN, 111)},
+//        {15, Channel(Channel::UNKNOWN, 111)},
+//        {16, Channel(Channel::UNKNOWN, 111)},
+//        {17, Channel(Channel::UNKNOWN, 111)},
+//        {18, Channel(Channel::UNKNOWN, 111)},
+//        {19, Channel(Channel::UNKNOWN, 111)},
+//        {20, Channel(Channel::UNKNOWN, 111)},
+//        {21, Channel(Channel::UNKNOWN, 111)},
+//        {22, Channel(Channel::UNKNOWN, 111)},
+//        {23, Channel(Channel::GAMMA, 0)},
+//        {24, Channel(Channel::GAMMA, 1)},
+//        {25, Channel(Channel::GAMMA, 2)},
+//        {26, Channel(Channel::GAMMA, 3)},
+//        {27, Channel(Channel::GAMMA, 4)},
+//        {28, Channel(Channel::GAMMA, 5)},
+//        {29, Channel(Channel::GAMMA, 6)},
+//        {30, Channel(Channel::GAMMA, 7)},
+//        {31, Channel(Channel::GAMMA, 8)},
+//    };
+
+//    return ChannelMap(map);
+//}
 
 std::vector<int> ChannelMap::getIdxsByType(Channel::EChannelType type) const
 {

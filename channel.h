@@ -10,8 +10,10 @@ public:
     enum EChannelFlag {
         FLAG_INACTIVE   = 0b0000'0000,
         FLAG_ACTIVE     = 0b0000'0001,
-        FLAG_ALPHA      = 0b0000'0010,
-        FLAG_GAMMA      = 0b0000'0100,
+//        FLAG_ALPHA      = 0b0000'0010,
+//        FLAG_GAMMA      = 0b0000'0100,
+        FLAG_GAMMA      = 0b0000'0010,
+        FLAG_ALPHA      = 0b0000'0100,
     };
 
     enum EChannelType {
