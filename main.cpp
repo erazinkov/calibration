@@ -31,11 +31,11 @@ void process(const std::string fileName)
 //    for (auto it = p.begin(); it != p.end(); ++it) {
 //        std::cout << it->first << ": " << it->second << "\n";
 //    }
-    auto r_2p = decoder.events_2p();
+//    auto r_2p = decoder.events_2p();
     auto r_3p = decoder.events_3p();
-    qDebug() << r_2p.size() << r_3p.size();
-    Calibration2p c(path.stem().string(), pre, r_2p);
-//    Calibration3p c(path.stem().string(), pre, r_3p);
+//    qDebug() << r_2p.size() << r_3p.size();
+//    Calibration2p c(path.stem().string(), pre, r_2p);
+    Calibration3p c(path.stem().string(), pre, r_3p);
 //    auto c = decoder.counters();
 
 //    for (const auto &item : c.rawhits)
@@ -71,7 +71,8 @@ int main(int argc, char *argv[])
 
 //     process("/home/egor/shares/tmp/adcm-test/pulp_sugar8kg_47cm_multipl_2to7_1");
 //    process("/home/egor/shares/tmp/adcm-test/pulp_sugar8kg_47cm_multipl_2to7_reversed_1");
-    process("/home/egor/shares/tmp/adcm-test/pulp_sugar8kg_47cm_multipl_2to7_low_thr_reversed_1");
+//    process("/home/egor/shares/tmp/adcm-test/pulp_sugar8kg_47cm_multipl_2to7_low_thr_reversed_1");
+    process("/home/egor/shares/tmp/adcm-test/pulp_carbon5kg_47cm_multipl_2to7_low_thr_reversed_1");
     auto stop = std::chrono::steady_clock::now();
     std::cout << "Total time elapsed, ms: " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << std::endl;
 

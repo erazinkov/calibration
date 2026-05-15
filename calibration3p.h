@@ -43,13 +43,13 @@ private:
 //                            TF1 f);
 
 //    void fillHistChannel(const std::vector<dec_ev_3p_t> &events, TH1 *h, double minT, double maxT, bool exclude);
-//    void fillHistEnergy(const std::vector<dec_ev_3p_t> &events, TH1 *h, double minT, double maxT, bool exclude, TF1 f);
+    void fillHistEnergy(const std::vector<dec_ev_3p_t> &events, TH1 *h, double minT, double maxT, bool exclude);
 
 
     void processTime();
 //    void processTimeWithEnergyCut();
 //    void processGammaCh();
-//    void processGammaEnergy();
+    void processGammaEnergy();
 //    void processGammaEnergyTime();
 
 };

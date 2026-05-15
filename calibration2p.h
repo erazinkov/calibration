@@ -46,6 +46,8 @@ private:
     void fillHistEnergy(const std::vector<dec_ev_2p_t> &events, TH1 *h, double minT, double maxT, bool exclude, TF1 f);
 
 
+    void processGammaChannel();
+
     void processTime();
     void processTimeWithEnergyCut();
     void processGammaCh();

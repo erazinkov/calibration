@@ -86,7 +86,7 @@ struct dec_det_t
 struct dec_ev_2p_t
 {    
     double ts;    // timestamp, 10 ns step
-    float tdc;      // delta time = gamma_time - alpha_time
+//    float tdc;      // delta time = gamma_time - alpha_time
     dec_det_t a;    // alpha detector
     dec_det_t g;    // gamma detector
 } __attribute__ ((packed));
@@ -94,7 +94,7 @@ struct dec_ev_2p_t
 struct dec_ev_3p_t
 {
     double ts;    // timestamp, 10 ns step
-    float tdc;      // delta time = gamma_time - alpha_time
+//    float tdc;      // delta time = gamma_time - alpha_time
     dec_det_t a;    // alpha detector
     dec_det_t g_0;    // gamma detector
     dec_det_t g_1;    // gamma detector

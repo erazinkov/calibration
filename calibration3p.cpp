@@ -23,7 +23,7 @@ void Calibration3p::process()
 //    std::cout << _idxsGamma.size() << " " << _idxsAlpha.size() << std::endl;
     //    processGammaCh();
     //    processGammaEnergyTime();
-    //    processGammaEnergy();
+        processGammaEnergy();
 //   processTimeWithEnergyCut();
 }
 
@@ -31,12 +31,12 @@ void Calibration3p::process()
 std::vector<dec_ev_3p_t> Calibration3p::selectedEvents(uint8_t idxGamma, u_int8_t idxAlpha)
 {
     std::vector<dec_ev_3p_t> selectedEvents{};
-    auto it{_events.begin()};
+    auto it{events_.begin()};
 
-    while ( (it = std::find_if(it, _events.end(), [&idxGamma, &idxAlpha](dec_ev_3p_t e){
+    while ( (it = std::find_if(it, events_.end(), [&idxGamma, &idxAlpha](dec_ev_3p_t e){
         auto gPrimary = e.g_0.amp > e.g_1.amp ? e.g_0 : e.g_1;
         return gPrimary.index == idxGamma && e.a.index == idxAlpha;
-    })) != _events.end() ) {
+    })) != events_.end() ) {
         selectedEvents.push_back(*it);
         ++it;
     }
@@ -115,32 +115,67 @@ void Calibration3p::fillHistTime(const std::vector<dec_ev_3p_t> &events, TH1 *h,
 //    }
 //}
 
-//void Calibration2p::fillHistEnergy(const std::vector<dec_ev_2p_t> &events, TH1 *h, double minT, double maxT, bool exclude, TF1 f)
-//{
-//    for (const auto & item : events)
-//    {
-//        auto t{static_cast<double>(item.tdc)};
-//        auto e{static_cast<double>(item.g.amp)};
+void Calibration3p::fillHistEnergy(const std::vector<dec_ev_3p_t> &events, TH1 *h, double minT, double maxT, bool exclude)
+{
+    class Data {
+    public:
+        Data(dec_det_t g, dec_det_t a, const std::vector<double> &calib, const std::vector<std::vector<double>> &timePeaksPos) {
+            index  = g.index;
+            e = static_cast<double>(calib.at(g.index) * g.amp);
+            t = static_cast<double>(g.time - a.time);
+            windowed = timePeaksPos.at(g.index).at(a.index) - 3.0 < t && t < timePeaksPos.at(g.index).at(a.index) + 3.0;
+        }
+        int index;
+        double e;
+        double t;
+        bool windowed;
+    };
+
+    for (const auto & item : events)
+    {
+        auto a{item.a};
+        auto gPrimary{item.g_0.amp > item.g_1.amp ? item.g_0 : item.g_1};
+        auto gSecondary{item.g_0.amp > item.g_1.amp ? item.g_1 : item.g_0};
+//        auto tPrimary{static_cast<double>(gPrimary.time - item.a.time)};
+//        auto tSecondary{static_cast<double>(gPrimary.time - item.a.time)};
+//        auto ePrimary{static_cast<double>(calib.at(gPrimary.index) * gPrimary.amp)};
+//        auto eSecondary{static_cast<double>(calib.at(gSecondary.index) * gSecondary.amp)};
+////        auto t{tPrimary}; // primary
+////        auto e{ePrimary}; // primary
+////        auto t{tSecondary}; // secondary
+////        auto e{eSecondary}; // secondary
+//        auto t{tPrimary}; // sum
+//        auto e{ePrimary + eSecondary}; // sum
+
+        const Data gDataPrimary(gPrimary, a, calib, timePeaksFinder_.get()->timePeaksPos());
+        const Data gDataSecondary(gSecondary, a, calib, timePeaksFinder_.get()->timePeaksPos());
+
+        bool grouped{(gDataPrimary.index < 4 && gDataSecondary.index < 4) || (gDataPrimary.index > 3 && gDataSecondary.index > 3)};
+        bool correct{grouped && gDataPrimary.windowed && gDataSecondary.windowed};
+        if (correct) {
+            h->Fill(gDataPrimary.e + gDataSecondary.e);
+        }
+
 //        if (exclude)
 //        {
 //            if (t < minT || maxT < t)
 //            {
-//                h->Fill(f.Eval(e));
+//                h->Fill(e);
 //            }
 //        }
 //        else
 //        {
 //            if (minT <= t && t <= maxT)
 //            {
-//                h->Fill(f.Eval(e));
+//                h->Fill(e);
 //            }
 //        }
-//    }
-//}
+    }
+}
 
 void Calibration3p::processTime()
 {
-    auto hists{_histogramManager->createHistograms("histTime", BINS_TIME, XLOW_TIME, XUP_TIME, _idxsGamma, _idxsAlpha)};
+    auto hists{histogramManager_->createHistograms("histTime", BINS_TIME, XLOW_TIME, XUP_TIME, _idxsGamma, _idxsAlpha)};
 
     auto start = std::chrono::steady_clock::now();
 
@@ -187,7 +222,7 @@ void Calibration3p::processTime()
 //   timePeaksFinder_.get()->writePeaksPosToFile("time_peak_pos_sugar_emptiness_1.txt");
 //   timePeaksFinder_.get()->readPeaksPosFromFile("time_peak_pos_sugar_emptiness_1.txt");
 //    timePeaksFinder_.get()->readPeaksPosFromFile("time_peak_pospulp_sahar2kg_47cm_emptiness_new_1.txt");
-   auto hists_{_histogramManager->createHistograms("histTimeU", BINS_TIME, XLOW_TIME, XUP_TIME, _idxsGamma, _idxsAlpha)};
+   auto hists_{histogramManager_->createHistograms("histTimeU", BINS_TIME, XLOW_TIME, XUP_TIME, _idxsGamma, _idxsAlpha)};
 
    for (size_t i{0}; i < hists_.size(); ++i)
    {
@@ -203,7 +238,7 @@ void Calibration3p::processTime()
    func_async(tasks.begin(), tasks.end());
    tasks.clear();
 
-   auto histsTimeAlpha{_histogramManager->createHistograms("histTimeAlpha", BINS_TIME, XLOW_TIME, XUP_TIME, _idxsAlpha)};
+   auto histsTimeAlpha{histogramManager_->createHistograms("histTimeAlpha", BINS_TIME, XLOW_TIME, XUP_TIME, _idxsAlpha)};
    for (size_t i{0}; i < hists_.size(); ++i)
    {
        for (size_t j{0}; j <  hists_.at(i).size(); ++j)
@@ -221,8 +256,8 @@ void Calibration3p::processTime()
        }
    }
 
-    _histogramManager->printToPsFile("time", hists);
-    _histogramManager->printToPsFile("timeAlpha", histsTimeAlpha);
+    histogramManager_->printToPsFile("time", hists);
+    histogramManager_->printToPsFile("timeAlpha", histsTimeAlpha);
 //    _histogramManager->printToPsFile("time_1", hists.at(0).at(0));
 
 }
@@ -341,111 +376,64 @@ void Calibration3p::processTime()
 
 //}
 
-//void Calibration2p::processGammaEnergy()
-//{
-//    auto histsSg(_histogramManager->createHistograms("histSg", BINS_ENERGY, XLOW_ENERGY, XUP_ENERGY, _idxsGamma, _idxsAlpha));
-//    auto histsBg(_histogramManager->createHistograms("histBg", BINS_ENERGY, XLOW_ENERGY, XUP_ENERGY, _idxsGamma, _idxsAlpha));
-
-//    std::vector<TF1> fs;
-//    for (size_t i{0}; i < histsSg.size(); ++i)
-//    {
-//        PiecewiseLinearFunction fObj(_energyPeaks.at(i));
-//        TF1 f("f", fObj, XLOW_CHANNEL, XUP_CHANNEL, 0);
-//        fs.push_back(f);
-//    }
+void Calibration3p::processGammaEnergy()
+{
+    auto histsSg(histogramManager_->createHistograms("histSg", BINS_ENERGY, XLOW_ENERGY, XUP_ENERGY, _idxsGamma, _idxsAlpha));
 
 
-//    // save calibration
-////    const std::string outputFileName1{"calibration_functions_" + fileName_ + ".root"};
-////    std::unique_ptr<TFile> outputFile{TFile::Open((outputFileName1).c_str(), "RECREATE")};
-////    if (outputFile.get())
-////    {
-////        for (size_t i{0}; i < fs.size(); ++i)
-////        {
-////            fs.at(i).Write(("f_" + std::to_string(i)).c_str(), TObject::kOverwrite);
-////        }
-////    }
-//    // load calibration
-////    const std::string inputFileName{"calibration_functions_" + fileName_ + ".root"};
-//    const std::string inputFileName{"calibration_functions_pulp_sahar2kg_47cm_emptiness_new_1.root"};
-//    std::unique_ptr<TFile> inputFile{TFile::Open((inputFileName).c_str(), "READ")};
-//    if (inputFile.get())
-//    {
-//        for (size_t i{0}; i < fs.size(); ++i)
-//        {
-//            TObject *tObj{nullptr};
-//            inputFile->GetObject(("f_" + std::to_string(i)).c_str(), tObj);
-//            if (tObj)
-//            {
-//                fs[i] = *(static_cast<TF1 *>(tObj));
-//            }
-//            delete tObj;
-//            tObj = nullptr;
-//        }
-//    }
+    std::vector<std::function<void()>> tasks;
+    for (size_t i{0}; i < histsSg.size(); ++i)
+    {
+        for (size_t j{0}; j <  histsSg.at(i).size(); ++j)
+        {
+            tasks.push_back([this, i, j, &histsSg] () {
+                auto sE{selectedEvents(static_cast<u_int8_t>(i), static_cast<u_int8_t>(j))};
+                auto tSgMin{timePeaksFinder_.get()->timePeaksPos().at(i).at(j) - 3.0};
+                auto tSgMax{timePeaksFinder_.get()->timePeaksPos().at(i).at(j) + 3.0};
+                fillHistEnergy(sE, histsSg.at(i).at(j).get(), tSgMin, tSgMax, false);
+            });
+        }
+    }
+    func_async(tasks.begin(), tasks.end());
+    tasks.clear();
 
-//    std::vector<std::function<void()>> tasks;
-//    for (size_t i{0}; i < histsSg.size(); ++i)
-//    {
-//        for (size_t j{0}; j <  histsSg.at(i).size(); ++j)
-//        {
-//            tasks.push_back([this, i, j, &histsSg, &histsBg, &fs] () {
-//                auto sE{selectedEvents(static_cast<u_int8_t>(i), static_cast<u_int8_t>(j))};
-//                auto tSgMin{timePeaksFinder_.get()->timePeaksPos().at(i).at(j) - 3.0};
-//                auto tSgMax{timePeaksFinder_.get()->timePeaksPos().at(i).at(j) + 3.0};
-//                fillHistEnergy(sE, histsSg.at(i).at(j).get(), tSgMin, tSgMax, false, fs.at(i));
-//                auto tBgMin{timePeaksFinder_.get()->timePeaksPos().at(i).at(j) - 30.0};
-//                auto tBgMax{timePeaksFinder_.get()->timePeaksPos().at(i).at(j) - 20.0};
-//                fillHistEnergy(sE, histsBg.at(i).at(j).get(), tBgMin, tBgMax, false, fs.at(i));
-//            });
-//        }
-//    }
-//    func_async(tasks.begin(), tasks.end());
-//    tasks.clear();
+    auto histsSgGamma{histogramManager_->createHistograms("histSgGamma", BINS_ENERGY, XLOW_ENERGY, XUP_ENERGY, _idxsGamma)};
+    for (size_t i{0}; i < histsSg.size(); ++i)
+    {
+        for (size_t j{0}; j < histsSg.at(i).size(); ++j)
+        {
+            histsSgGamma.at(i).get()->Add(histsSg.at(i).at(j).get());
+        }
+    }
 
-//    auto histsSgGamma{_histogramManager->createHistograms("histSgGamma", BINS_ENERGY, XLOW_ENERGY, XUP_ENERGY, _idxsGamma)};
-//    for (size_t i{0}; i < histsSg.size(); ++i)
-//    {
-//        for (size_t j{0}; j < histsSg.at(i).size(); ++j)
-//        {
-//            histsSgGamma.at(i).get()->Add(histsSg.at(i).at(j).get());
-//            histsSgGamma.at(i).get()->Add(histsBg.at(i).at(j).get(), -6.0 / 10.0);
-//        }
-//    }
+    std::shared_ptr<TH1D> hist{new TH1D("hist", "hist", BINS_ENERGY, XLOW_ENERGY, XUP_ENERGY)};
+    for (size_t i{0}; i < histsSg.size(); ++i)
+    {
+        hist.get()->Add(histsSgGamma.at(i).get());
+    }
 
-//    std::shared_ptr<TH1D> hist{new TH1D("hist", "hist", BINS_ENERGY, XLOW_ENERGY, XUP_ENERGY)};
-//    for (size_t i{0}; i < histsSg.size(); ++i)
-//    {
-//        hist.get()->Add(histsSgGamma.at(i).get());
-//    }
+    auto histsSgAlpha{histogramManager_->createHistograms("histSgAlpha", BINS_ENERGY, XLOW_ENERGY, XUP_ENERGY, _idxsAlpha)};
+    for (size_t i{0}; i < histsSg.size(); ++i)
+    {
+        for (size_t j{0}; j < histsSg.at(i).size(); ++j)
+        {
+            histsSgAlpha.at(j).get()->Add(histsSg.at(i).at(j).get());
+        }
+    }
+    histogramManager_->printToPsFile("eSgGamma", histsSgGamma);
+    // _histogramManager->saveToRootFile("output", hist);
+   const std::string outputFileName{"output_energy_3p_" + fileName_ + ".root"};
 
-//    auto histsSgAlpha{_histogramManager->createHistograms("histSgAlpha", BINS_ENERGY, XLOW_ENERGY, XUP_ENERGY, _idxsAlpha)};
-//    for (size_t i{0}; i < histsSg.size(); ++i)
-//    {
-//        for (size_t j{0}; j < histsSg.at(i).size(); ++j)
-//        {
-//            histsSgAlpha.at(j).get()->Add(histsSg.at(i).at(j).get());
-//            histsSgAlpha.at(j).get()->Add(histsBg.at(i).at(j).get(), -6.0 / 10.0);
-//        }
-//    }
-//    _histogramManager->printToPsFile("eSgGamma", histsSgGamma);
-//    // _histogramManager->saveToRootFile("output", hist);
-//   const std::string outputFileName{"output_energy_" + fileName_ + ".root"};
-
-//   std::unique_ptr<TFile> file{TFile::Open((outputFileName).c_str(), "RECREATE")};
-//   if (file.get())
-//   {
-//       for (auto &item : histsSgAlpha)
-//       {
-//           item.get()->Write(item.get()->GetName(), TObject::kOverwrite);
-//       }
-//       for (auto &item : histsSgGamma)
-//       {
-//           item.get()->Write(item.get()->GetName(), TObject::kOverwrite);
-//       }
-//       hist.get()->Write(hist.get()->GetName(), TObject::kOverwrite);
-//   }
-//}
+   std::unique_ptr<TFile> file{TFile::Open((outputFileName).c_str(), "RECREATE")};
+   if (file.get())
+   {
+       for (auto &item : histsSgGamma)
+       {
+           item.get()->Write(item.get()->GetName(), TObject::kOverwrite);
+       }
+       hist.get()->Write(hist.get()->GetName(), TObject::kOverwrite);
+   }
+}
 
 ////void Calibration::processGammaEnergyTime()
 ////{

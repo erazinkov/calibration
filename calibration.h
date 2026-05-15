@@ -19,12 +19,12 @@ class Calibration
 {
 public:
     Calibration(const std::string &fileName, const ChannelMap &map, std::vector<T> &events)
-        : fileName_(fileName), map_(map), _events(events)
+        : fileName_(fileName), map_(map), events_(events)
     {
         _idxsGamma = map.getIdxsByType(Channel::GAMMA);
         _idxsAlpha = map.getIdxsByType(Channel::ALPHA);
         timePeaksFinder_ = std::make_unique<TimePeaksFinder>(map_);
-        _histogramManager = std::make_unique<HistogramManager>();
+        histogramManager_ = std::make_unique<HistogramManager>("adcm-test");
     }
     virtual ~Calibration() {}
 
@@ -41,11 +41,32 @@ protected:
     static inline constexpr double XUP_CHANNEL{4.0e3};
     static inline constexpr double XUP_ENERGY{8.0e3};
 
-    const std::vector<T> _events;
+//    const std::vector<double> calib{
+//        4438.0 / 865.0,
+//        4438.0 / 835.0,
+//        4438.0 / 855.0,
+//        4438.0 / 805.0,
+//        4438.0 / 845.0,
+//        4438.0 / 885.0,
+//        4438.0 / 875.0,
+//        4438.0 / 855.0
+//    };
+    const std::vector<double> calib{
+        4438.0 / 855,
+        4438.0 / 835,
+        4438.0 / 845,
+        4438.0 / 805,
+        4438.0 / 845,
+        4438.0 / 875,
+        4438.0 / 865,
+        4438.0 / 855
+    };
+
     std::string fileName_;
     std::unique_ptr<TimePeaksFinder> timePeaksFinder_;
     const ChannelMap map_;
-    std::unique_ptr<HistogramManager> _histogramManager;
+    const std::vector<T> events_;
+    std::unique_ptr<HistogramManager> histogramManager_;
     virtual std::vector<T> selectedEvents(uint8_t idxGamma, u_int8_t idxAlpha) = 0;
     virtual void fillHistTime(const std::vector<T> &events, TH1 *h, double) = 0;
 
