@@ -36,7 +36,7 @@ void Calibration::process()
 {
 //    processTimeStamp();
     processTime();
-//    processGammaCh();
+    processGammaCh();
 //    processGammaEnergyTime();
 //    processGammaEnergy();
 //   processTimeWithEnergyCut();
