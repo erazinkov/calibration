@@ -151,7 +151,12 @@ void Calibration3p::fillHistEnergy(const std::vector<dec_ev_3p_t> &events, TH1 *
         const Data gDataSecondary(gSecondary, a, calib, timePeaksFinder_.get()->timePeaksPos());
 
         bool grouped{(gDataPrimary.index < 4 && gDataSecondary.index < 4) || (gDataPrimary.index > 3 && gDataSecondary.index > 3)};
-        bool correct{grouped && gDataPrimary.windowed && gDataSecondary.windowed};
+        auto tAvg{0.5 * (timePeaksFinder_.get()->timePeaksPos().at(gDataPrimary.index).at(a.index) +
+                           timePeaksFinder_.get()->timePeaksPos().at(gDataSecondary.index).at(a.index))};
+        auto windowedPrimary{tAvg - a.time - 3.0 < gDataPrimary.t && gDataPrimary.t < tAvg - a.time + 3.0};
+        auto windowedSecondary{tAvg - a.time - 3.0 < gDataSecondary.t && gDataSecondary.t < tAvg - a.time + 3.0};
+//        bool correct{grouped && gDataPrimary.windowed && gDataSecondary.windowed};
+        bool correct{grouped && windowedPrimary && windowedSecondary};
         if (correct) {
             h->Fill(gDataPrimary.e + gDataSecondary.e);
         }

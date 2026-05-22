@@ -21,9 +21,9 @@ void Calibration2p::process()
     std::cout << "Process" << std::endl;
     processTime();
 //    std::cout << _idxsGamma.size() << " " << _idxsAlpha.size() << std::endl;
-    processGammaChannel();
+//    processGammaChannel();
     //    processGammaEnergyTime();
-    //    processGammaEnergy();
+        processGammaEnergy();
 //   processTimeWithEnergyCut();
 }
 
@@ -130,8 +130,22 @@ void Calibration2p::fillHistEnergy(const std::vector<dec_ev_2p_t> &events, TH1 *
         {
             if (minT <= t && t <= maxT)
             {
-                h->Fill(f.Eval(e));
+//                h->Fill(f.Eval(e));
+                h->Fill(calib.at(item.g.index) * e);
             }
+        }
+    }
+}
+
+void Calibration2p::fillHistEnergy(const std::vector<dec_ev_2p_t> &events, TH1 *h, double minT, double maxT, bool exclude)
+{
+    for (const auto & item : events)
+    {
+        auto t{static_cast<double>(item.g.time - item.a.time)};
+        auto e{static_cast<double>(item.g.amp)};
+        if (minT <= t && t <= maxT)
+        {
+            h->Fill(calib.at(item.g.index) * e);
         }
     }
 }
@@ -383,15 +397,16 @@ void Calibration2p::processGammaCh()
 void Calibration2p::processGammaEnergy()
 {
     auto histsSg(histogramManager_->createHistograms("histSg", BINS_ENERGY, XLOW_ENERGY, XUP_ENERGY, _idxsGamma, _idxsAlpha));
-    auto histsBg(histogramManager_->createHistograms("histBg", BINS_ENERGY, XLOW_ENERGY, XUP_ENERGY, _idxsGamma, _idxsAlpha));
+//    auto histsBg(histogramManager_->createHistograms("histBg", BINS_ENERGY, XLOW_ENERGY, XUP_ENERGY, _idxsGamma, _idxsAlpha));
 
-    std::vector<TF1> fs;
-    for (size_t i{0}; i < histsSg.size(); ++i)
-    {
-        PiecewiseLinearFunction fObj(_energyPeaks.at(i));
-        TF1 f("f", fObj, XLOW_CHANNEL, XUP_CHANNEL, 0);
-        fs.push_back(f);
-    }
+
+//    std::vector<TF1> fs;
+//    for (size_t i{0}; i < histsSg.size(); ++i)
+//    {
+//        PiecewiseLinearFunction fObj(_energyPeaks.at(i));
+//        TF1 f("f", fObj, XLOW_CHANNEL, XUP_CHANNEL, 0);
+//        fs.push_back(f);
+//    }
 
 
     // save calibration
@@ -406,36 +421,38 @@ void Calibration2p::processGammaEnergy()
 //    }
     // load calibration
 //    const std::string inputFileName{"calibration_functions_" + fileName_ + ".root"};
-    const std::string inputFileName{"calibration_functions_pulp_sahar2kg_47cm_emptiness_new_1.root"};
-    std::unique_ptr<TFile> inputFile{TFile::Open((inputFileName).c_str(), "READ")};
-    if (inputFile.get())
-    {
-        for (size_t i{0}; i < fs.size(); ++i)
-        {
-            TObject *tObj{nullptr};
-            inputFile->GetObject(("f_" + std::to_string(i)).c_str(), tObj);
-            if (tObj)
-            {
-                fs[i] = *(static_cast<TF1 *>(tObj));
-            }
-            delete tObj;
-            tObj = nullptr;
-        }
-    }
+//    const std::string inputFileName{"calibration_functions_pulp_sahar2kg_47cm_emptiness_new_1.root"};
+//    std::unique_ptr<TFile> inputFile{TFile::Open((inputFileName).c_str(), "READ")};
+//    if (inputFile.get())
+//    {
+//        for (size_t i{0}; i < fs.size(); ++i)
+//        {
+//            TObject *tObj{nullptr};
+//            inputFile->GetObject(("f_" + std::to_string(i)).c_str(), tObj);
+//            if (tObj)
+//            {
+//                fs[i] = *(static_cast<TF1 *>(tObj));
+//            }
+//            delete tObj;
+//            tObj = nullptr;
+//        }
+//    }
+
 
     std::vector<std::function<void()>> tasks;
     for (size_t i{0}; i < histsSg.size(); ++i)
     {
         for (size_t j{0}; j <  histsSg.at(i).size(); ++j)
         {
-            tasks.push_back([this, i, j, &histsSg, &histsBg, &fs] () {
+            tasks.push_back([this, i, j, &histsSg] () {
+//                tasks.push_back([this, i, j, &histsSg, &histsBg, &fs] () {
                 auto sE{selectedEvents(static_cast<u_int8_t>(i), static_cast<u_int8_t>(j))};
                 auto tSgMin{timePeaksFinder_.get()->timePeaksPos().at(i).at(j) - 3.0};
                 auto tSgMax{timePeaksFinder_.get()->timePeaksPos().at(i).at(j) + 3.0};
-                fillHistEnergy(sE, histsSg.at(i).at(j).get(), tSgMin, tSgMax, false, fs.at(i));
-                auto tBgMin{timePeaksFinder_.get()->timePeaksPos().at(i).at(j) - 30.0};
-                auto tBgMax{timePeaksFinder_.get()->timePeaksPos().at(i).at(j) - 20.0};
-                fillHistEnergy(sE, histsBg.at(i).at(j).get(), tBgMin, tBgMax, false, fs.at(i));
+                fillHistEnergy(sE, histsSg.at(i).at(j).get(), tSgMin, tSgMax, false);
+//                auto tBgMin{timePeaksFinder_.get()->timePeaksPos().at(i).at(j) - 30.0};
+//                auto tBgMax{timePeaksFinder_.get()->timePeaksPos().at(i).at(j) - 20.0};
+//                fillHistEnergy(sE, histsBg.at(i).at(j).get(), tBgMin, tBgMax, false, fs.at(i));
             });
         }
     }
@@ -448,7 +465,7 @@ void Calibration2p::processGammaEnergy()
         for (size_t j{0}; j < histsSg.at(i).size(); ++j)
         {
             histsSgGamma.at(i).get()->Add(histsSg.at(i).at(j).get());
-            histsSgGamma.at(i).get()->Add(histsBg.at(i).at(j).get(), -6.0 / 10.0);
+//            histsSgGamma.at(i).get()->Add(histsBg.at(i).at(j).get(), -6.0 / 10.0);
         }
     }
 
@@ -464,7 +481,7 @@ void Calibration2p::processGammaEnergy()
         for (size_t j{0}; j < histsSg.at(i).size(); ++j)
         {
             histsSgAlpha.at(j).get()->Add(histsSg.at(i).at(j).get());
-            histsSgAlpha.at(j).get()->Add(histsBg.at(i).at(j).get(), -6.0 / 10.0);
+//            histsSgAlpha.at(j).get()->Add(histsBg.at(i).at(j).get(), -6.0 / 10.0);
         }
     }
     histogramManager_->printToPsFile("eSgGamma", histsSgGamma);
@@ -474,10 +491,10 @@ void Calibration2p::processGammaEnergy()
    std::unique_ptr<TFile> file{TFile::Open((outputFileName).c_str(), "RECREATE")};
    if (file.get())
    {
-       for (auto &item : histsSgAlpha)
-       {
-           item.get()->Write(item.get()->GetName(), TObject::kOverwrite);
-       }
+//       for (auto &item : histsSgAlpha)
+//       {
+//           item.get()->Write(item.get()->GetName(), TObject::kOverwrite);
+//       }
        for (auto &item : histsSgGamma)
        {
            item.get()->Write(item.get()->GetName(), TObject::kOverwrite);
