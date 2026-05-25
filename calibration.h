@@ -67,6 +67,8 @@ private:
     void processGammaEnergy();
     void processGammaEnergyTime();
 
+    void processGammaChCalib();
+
     std::vector<std::vector<EnergyPeak>>  _energyPeaks;
 
     std::vector<int> _idxsGamma;

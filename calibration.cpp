@@ -36,7 +36,10 @@ void Calibration::process()
 {
 //    processTimeStamp();
     processTime();
-    processGammaCh();
+//    processGammaCh();
+
+    processGammaChCalib();
+
 //    processGammaEnergyTime();
 //    processGammaEnergy();
 //   processTimeWithEnergyCut();
@@ -570,4 +573,85 @@ void Calibration::processGammaEnergyTime()
             item.get()->Write(item.get()->GetName(), TObject::kOverwrite);
         }
     }
+}
+
+void Calibration::processGammaChCalib()
+{
+    auto hists{_histogramManager->createHistograms("histBg", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, _idxsGamma, _idxsAlpha)};
+
+    std::vector<std::function<void()>> tasks;
+    for (size_t i{0}; i < hists.size(); ++i)
+    {
+        for (size_t j{0}; j <  hists.at(i).size(); ++j)
+        {
+            tasks.push_back([this, i, j, &hists] () {
+                auto sE{selectedEvents(static_cast<u_int8_t>(_idxsGamma.at(i)), static_cast<u_int8_t>(_idxsAlpha.at(j)))};
+                auto tSgMin{timePeaksFinder_.get()->timePeaksPos().at(i).at(j) - 3.0};
+                auto tSgMax{timePeaksFinder_.get()->timePeaksPos().at(i).at(j) + 3.0};
+                auto tBgMin{timePeaksFinder_.get()->timePeaksPos().at(i).at(j) - 30.0};
+                auto tBgMax{timePeaksFinder_.get()->timePeaksPos().at(i).at(j) - 20.0};
+//                fillHistChannel(sE, hists.at(i).at(j).get(), tSgMin, tSgMax, false);
+                fillHistChannel(sE, hists.at(i).at(j).get(), timePeaksFinder_.get()->timePeaksPos().at(i).at(j), timePeaksFinder_.get()->timePeaksPos().at(i).at(j), true);
+//                fillHistChannel(sE, hists.at(i).at(j).get(), tBgMin, tBgMax, false);
+            });
+        }
+    }
+    func_async(tasks.begin(), tasks.end());
+    tasks.clear();
+
+    auto histsGamma{_histogramManager->createHistograms("histGamma", BINS_CHANNEL, XLOW_CHANNEL, XUP_CHANNEL, _idxsGamma)};
+    for (size_t i{0}; i < histsGamma.size(); ++i)
+    {
+        for (size_t j{0}; j < hists.at(i).size(); ++j)
+        {
+            histsGamma.at(i).get()->Add(hists.at(i).at(j).get());
+        }
+    }
+
+    const std::string outputFileName{"output_new_calib_gamma_channel.root"};
+    std::unique_ptr<TFile> file{TFile::Open((outputFileName).c_str(), "RECREATE")};
+    if (file.get())
+    {
+        for (auto &item : histsGamma)
+        {
+            item.get()->Write(item.get()->GetName(), TObject::kOverwrite);
+        }
+    }
+
+    const auto refHistInx{0};
+
+    TF1 ft("ft", [&](double *x, double *p) {
+//        auto arg{histsGamma.at(refHistInx).get()->GetXaxis()->FindBin(p[0] + p[1] * x[0] + p[2] * x[0] * x[0])};
+//        return p[3] * histsGamma.at(refHistInx).get()->GetBinContent(arg) + p[4];
+        return p[3] * histsGamma.at(refHistInx).get()->Interpolate(p[0] + p[1] * x[0] + p[2] * x[0] * x[0]) + p[4];
+    }, 0, 4'000, 5);
+
+    TCanvas c("c", "c", 1024, 960);
+    c.Print("calibration0.ps[");
+    TH1D histChi2("histChi2", "histChi2", histsGamma.size(), 0.5, histsGamma.size() + 0.5);
+    for (ulong i{0}; i < histsGamma.size(); ++i) {
+        ft.SetParameters(0, 1.0, 0, 1.0, 0);
+        ft.SetParLimits(3, 0.0, 10.0);
+        ft.FixParameter(4, 0.0);
+        int maxBinref = histsGamma.at(refHistInx).get()->GetMaximumBin();
+        double maxXref = histsGamma.at(refHistInx).get()->GetXaxis()->GetBinCenter(maxBinref);
+        ft.SetRange(maxXref, 4'000);
+        ft.SetRange(0, 4'000);
+        histsGamma.at(i).get()->Fit("ft", "R0");
+        histsGamma.at(i).get()->GetListOfFunctions()->Remove(histsGamma.at(refHistInx).get()->GetFunction(ft.GetName()));
+        histChi2.SetBinContent(i + 1, ft.GetChisquare() / ft.GetNDF());
+        histsGamma.at(i).get()->GetXaxis()->SetRangeUser(0, 3'000);
+        histsGamma.at(i).get()->Draw();
+        ft.SetNpx(10'000);
+        ft.Draw("same");
+        c.Print("calibration0.ps");
+    }
+    histChi2.Draw("hist");
+    c.Print("calibration0.ps");
+    c.Print("calibration0.ps]");
+
+
+
+
+
 }
