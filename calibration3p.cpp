@@ -23,7 +23,7 @@ void Calibration3p::process()
 //    std::cout << _idxsGamma.size() << " " << _idxsAlpha.size() << std::endl;
     //    processGammaCh();
     //    processGammaEnergyTime();
-        processGammaEnergy();
+//        processGammaEnergy();
 //   processTimeWithEnergyCut();
 }
 
@@ -48,7 +48,12 @@ void Calibration3p::fillHistTime(const std::vector<dec_ev_3p_t> &events, TH1 *h,
     for (const auto & item : events)
     {
         auto gPrimary = item.g_0.amp > item.g_1.amp ? item.g_0 : item.g_1;
-        h->Fill(static_cast<double>(gPrimary.time - item.a.time) - offset);
+        auto gSecondary = item.g_0.amp > item.g_1.amp ? item.g_1 : item.g_0;
+        if (item.a.index == 0) {
+            h->Fill(static_cast<double>(0.5 * (gPrimary.time + gSecondary.time) - item.a.time) - offset);
+        }
+
+//        h->Fill(static_cast<double>(gPrimary.time - item.a.time) - offset);
     }
 }
 
