@@ -95,7 +95,7 @@ void TimePeaksFinder::calculatePeaksPos(std::vector<std::vector<TH1 *> > hists)
 
 double TimePeaksFinder::calculatePeakPos(TH1 *hist)
 {
-    hist->Rebin();
+//    hist->Rebin();
     auto timePeakPos{0.0};
 
     auto binMax{hist->GetMaximumBin()};

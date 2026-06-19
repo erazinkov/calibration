@@ -38,8 +38,8 @@ void Calibration::process()
     processTime();
     processGammaCh();
 //    processGammaEnergyTime();
-//    processGammaEnergy();
-//   processTimeWithEnergyCut();
+    processGammaEnergy();
+   processTimeWithEnergyCut();
 }
 
 std::vector<dec_ev_t> Calibration::selectedEvents(uint8_t idxGamma, u_int8_t idxAlpha)
@@ -190,15 +190,14 @@ void Calibration::processTime()
 
 
 
-//   timePeaksFinder_.get()->readPeaksPosFromFile("time_peak_pos_c_12_new.txt");
-//    timePeaksFinder_.get()->readPeaksPosFromFile("time_peak_pos_c12_bez_nijnej_zaschity.txt");
-//    timePeaksFinder_.get()->writePeaksPosToFile("time_peak_pospulp_sahar2kg_47cm_emptiness_new_1.txt");
+//       timePeaksFinder_.get()->readPeaksPosFromFile("time_peak_pulp_rot_c12_2cm_42cm_1.txt");
+//       timePeaksFinder_.get()->writePeaksPosToFile("time_peak_pulp_rot_c12_2cm_42cm_1.txt");
 
-//   timePeaksFinder_.get()->readPeaksPosFromFile("time_peak_pos_c12_bez_nijnej_zaschity_w_energy_cut.txt");
-//   timePeaksFinder_.get()->writePeaksPosToFile("time_peak_pos_c12_bez_nijnej_zaschity_w_energy_cut_check.txt");
-//   timePeaksFinder_.get()->writePeaksPosToFile("time_peak_pos_sugar_emptiness_1.txt");
-//   timePeaksFinder_.get()->readPeaksPosFromFile("time_peak_pos_sugar_emptiness_1.txt");
-//    timePeaksFinder_.get()->readPeaksPosFromFile("time_peak_pospulp_sahar2kg_47cm_emptiness_new_1.txt");
+//       timePeaksFinder_.get()->readPeaksPosFromFile("time_peak_pulp_rot_c12_2cm_42cm_2.txt");
+//       timePeaksFinder_.get()->writePeaksPosToFile("time_peak_pulp_rot_c12_2cm_42cm_2.txt");
+
+
+
    auto hists_{_histogramManager->createHistograms("histTimeU", BINS_TIME, XLOW_TIME, XUP_TIME, _idxsGamma, _idxsAlpha)};
 
    for (size_t i{0}; i < hists_.size(); ++i)
@@ -262,7 +261,6 @@ void Calibration::processTimeWithEnergyCut()
                 fillHistTimeWithEnergyCut(sE,
                                           hists.at(i).at(j).get(),
                                           timePeaksFinder_.get()->timePeaksPos().at(i).at(j),
-//                                          0.0,
                                           4438.0 - 240.0,
                                           4438.0 + 240.0,
                                           false,
@@ -296,6 +294,17 @@ void Calibration::processTimeWithEnergyCut()
            item.get()->Write(item.get()->GetName(), TObject::kOverwrite);
        }
    }
+
+//   auto h{std::make_shared<TH1D>("histTimeSumWithEnergyCut", "histTime", BINS_TIME, XLOW_TIME, XUP_TIME)};
+//   h->Sumw2();
+//   for (size_t i{0}; i < hists.size(); ++i)
+//   {
+//       for (size_t j{0}; j <  hists.at(i).size(); ++j)
+//       {
+//           h.get()->Add(hists.at(i).at(j).get());
+//       }
+//   }
+
 
 //    _histogramManager->printToPsFile("time_withEnergyCut", hists);
 //    _histogramManager->printToPsFile("timeAlpha_withEnergyCut", histsTimeAlpha);
@@ -378,22 +387,22 @@ void Calibration::processGammaEnergy()
 //    }
     // load calibration
 //    const std::string inputFileName{"calibration_functions_" + fileName_ + ".root"};
-    const std::string inputFileName{"calibration_functions_pulp_sahar2kg_47cm_emptiness_new_1.root"};
-    std::unique_ptr<TFile> inputFile{TFile::Open((inputFileName).c_str(), "READ")};
-    if (inputFile.get())
-    {
-        for (size_t i{0}; i < fs.size(); ++i)
-        {
-            TObject *tObj{nullptr};
-            inputFile->GetObject(("f_" + std::to_string(i)).c_str(), tObj);
-            if (tObj)
-            {
-                fs[i] = *(static_cast<TF1 *>(tObj));
-            }
-            delete tObj;
-            tObj = nullptr;
-        }
-    }
+//    const std::string inputFileName{"calibration_functions_pulp_rot_c12_2cm_42cm_2.root"};
+//    std::unique_ptr<TFile> inputFile{TFile::Open((inputFileName).c_str(), "READ")};
+//    if (inputFile.get())
+//    {
+//        for (size_t i{0}; i < fs.size(); ++i)
+//        {
+//            TObject *tObj{nullptr};
+//            inputFile->GetObject(("f_" + std::to_string(i)).c_str(), tObj);
+//            if (tObj)
+//            {
+//                fs[i] = *(static_cast<TF1 *>(tObj));
+//            }
+//            delete tObj;
+//            tObj = nullptr;
+//        }
+//    }
 
     std::vector<std::function<void()>> tasks;
     for (size_t i{0}; i < histsSg.size(); ++i)

@@ -19,7 +19,8 @@ public:
                return val;
            }
        }
-       return val;
+
+       return par_.at(par_.size() - 1).intercept + arg * par_.at(par_.size() - 1).slope;
    }
 private:
     struct Par
